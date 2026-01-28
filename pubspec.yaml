@@ -1,0 +1,47 @@
+name: finance_organization_mark_i
+description: Aplicativo de controle financeiro pessoal (Mark I).
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Ícones padrão iOS
+  cupertino_icons: ^1.0.8
+
+  # Armazenamento local simples
+  shared_preferences: ^2.2.2
+
+  # Abrir links externos (site pessoal)
+  url_launcher: ^6.3.1
+
+  # Animações (para o texto pulsante Mark I)
+  flutter_animate: ^4.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+  # Gerador automático de ícones para Android/iOS
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+
+  # Inclui todos os arquivos dentro da pasta assets/
+  assets:
+    - assets/
+
+# Configuração do ícone do app
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icone.png"
+  adaptive_icon_background: "#000000"   # fundo preto (pode trocar)
+  adaptive_icon_foreground: "assets/icone.png"
