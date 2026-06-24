@@ -1,0 +1,43 @@
+name: Compilar APK - Mark I
+
+on:
+  push:
+    branches:
+      - main # 💡 Mude para 'master' se a sua branch principal tiver esse nome
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Baixa o código do seu repositório para a máquina do GitHub
+      - name: Baixar Código
+        uses: actions/checkout@v4
+
+      # 2. Configura o Java (necessário para compilar Android)
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      # 3. Configura o Flutter na máquina virtual
+      - name: Configurar Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      # 4. Baixa as dependências do seu pubspec.yaml
+      - name: Instalar Dependências
+        run: flutter pub get
+
+      # 5. Roda o comando mágico para compilar o APK de forma limpa
+      - name: Compilar APK
+        run: flutter build apk --release
+
+      # 6. Pega o arquivo gerado e disponibiliza para download
+      - name: Disponibilizar APK para Download
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mark-I-Release-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
