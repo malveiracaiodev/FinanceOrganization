@@ -27,9 +27,7 @@ class ControleFinanceiro {
     };
   }
 
-  factory ControleFinanceiro.fromMap(
-    Map<String, dynamic> map,
-  ) {
+  factory ControleFinanceiro.fromMap(Map<String, dynamic> map) {
     return ControleFinanceiro(
       receitasExtras: _parseDouble(map['receitasExtras']),
       despesas: _parseDouble(map['despesas']),
@@ -37,18 +35,19 @@ class ControleFinanceiro {
     );
   }
 
+  // 🔄 Aliases de compatibilidade para o padrão JSON do Service
+  Map<String, dynamic> toJson() => toMap();
+  factory ControleFinanceiro.fromJson(Map<String, dynamic> json) => ControleFinanceiro.fromMap(json);
+
   ControleFinanceiro copyWith({
     double? receitasExtras,
     double? despesas,
     double? despesasPrevistas,
   }) {
     return ControleFinanceiro(
-      receitasExtras:
-          receitasExtras ?? this.receitasExtras,
-      despesas:
-          despesas ?? this.despesas,
-      despesasPrevistas:
-          despesasPrevistas ?? this.despesasPrevistas,
+      receitasExtras: receitasExtras ?? this.receitasExtras,
+      despesas: despesas ?? this.despesas,
+      despesasPrevistas: despesasPrevistas ?? this.despesasPrevistas,
     );
   }
 

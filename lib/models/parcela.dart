@@ -85,6 +85,10 @@ class Parcela {
     );
   }
 
+  // 🔄 Aliases para sincronizar com os métodos nativos do SharedPreferences/JSON
+  Map<String, dynamic> toJson() => toMap();
+  factory Parcela.fromJson(Map<String, dynamic> json) => Parcela.fromMap(json);
+
   /// 🧠 parser seguro
   static double _parseDouble(dynamic value) {
     if (value == null) return 0;

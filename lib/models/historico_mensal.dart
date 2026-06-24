@@ -50,6 +50,10 @@ class HistoricoMensal {
     );
   }
 
+  // 🔄 Aliases de compatibilidade adicionados para sincronizar com o HistoricoService
+  Map<String, dynamic> toJson() => toMap();
+  factory HistoricoMensal.fromJson(Map<String, dynamic> json) => HistoricoMensal.fromMap(json);
+
   /// 🧠 parser seguro
   static double _parseDouble(dynamic value) {
     if (value == null) return 0;

@@ -35,7 +35,7 @@ class AstraTheme {
       ),
 
       // Seus Cards adaptados ao estilo Glassmorphism/Space do Stitch
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: Colors.white.withOpacity(0.03),
         elevation: 0,
         shape: RoundedRectangleBorder(

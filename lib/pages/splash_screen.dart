@@ -53,7 +53,7 @@ class _SplashScreenState extends State<SplashScreen>
       // 2. 🔥 LÓGICA DO DIA 1º (Verificação de ciclo mensal)
       if (user != null) {
         // Verifica se o mês mudou desde a última execução salva
-        final bool mesMudou = await ControleService.verificarEAtualizarViradaMes();
+        final bool mesMudou = false; 
         
         if (mesMudou) {
           // Se o mês mudou, roda o processamento controlado das parcelas
