@@ -6,6 +6,7 @@ class ParcelasService {
   static const String _key = 'parcelas';
   static List<Parcela>? _cache;
 
+  /// 🔄 carregar parcelas (Interno)
   static Future<List<Parcela>> carregar() async {
     final prefs = await SharedPreferences.getInstance();
     final data = prefs.getStringList(_key) ?? [];
@@ -17,6 +18,7 @@ class ParcelasService {
     return _cache!;
   }
 
+  /// 💾 salvar lista (Interno)
   static Future<void> salvar(List<Parcela> lista) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(
@@ -26,12 +28,37 @@ class ParcelasService {
     _cache = List.from(lista);
   }
 
+  /// ➕ adicionar parcela individual
   static Future<void> adicionarParcela(Parcela p) async {
     final lista = await carregar();
     lista.add(p);
     await salvar(lista);
   }
 
+  // ==========================================
+  // 🔥 PONTES DE CONEXÃO COM A PARCELAS_PAGE
+  // ==========================================
+
+  /// 📡 Linha 29: Método esperado pela página para carregar os dados
+  static Future<List<Parcela>> carregarParcelas() async {
+    return await carregar();
+  }
+
+  /// 🗑️ Linha 38: Método esperado pela página para deletar uma parcela
+  static Future<void> deletarParcelas(String id) async {
+    final lista = await carregar();
+    lista.removeWhere((p) => p.id == id);
+    await salvar(lista);
+  }
+
+  /// 💾 Linha 116: Método esperado pela página para salvar uma nova parcela
+  static Future<void> salvarParcelas(Parcela nova) async {
+    await adicionarParcela(nova);
+  }
+
+  // ==========================================
+
+  /// 🚀 Cadastrar Compra Parcelada Automatizada
   static Future<void> cadastrarCompraParcelada({
     required String descricao,
     required double valorTotal,
@@ -53,6 +80,7 @@ class ParcelasService {
     await adicionarParcela(novaParcela);
   }
 
+  /// ✏️ Editar Compra Parcelada Existente
   static Future<void> editarCompraParcelada(
     String id, {
     required String novaDescricao,
@@ -77,12 +105,7 @@ class ParcelasService {
     }
   }
 
-  static Future<void> removerCompraParcelada(String id) async {
-    final lista = await carregar();
-    lista.removeWhere((p) => p.id == id);
-    await salvar(lista);
-  }
-
+  /// 📊 calcula total do mês SEM alterar estado
   static Future<double> calcularTotalMes() async {
     final lista = await carregar();
     double total = 0;
@@ -94,6 +117,7 @@ class ParcelasService {
     return total;
   }
 
+  /// 🔄 avança parcelas (EXECUÇÃO CONTROLADA)
   static Future<void> processarMes() async {
     final lista = await carregar();
     final List<Parcela> atualizada = [];
@@ -105,6 +129,7 @@ class ParcelasService {
     await salvar(atualizada);
   }
 
+  /// 🧹 limpar cache
   static void limparCache() {
     _cache = null;
   }
