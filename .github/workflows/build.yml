@@ -3,20 +3,20 @@ name: Compilar APK - Mark I
 on:
   push:
     branches:
-      - main # 💡 Mude para 'master' se a sua branch principal tiver esse nome
+      - main # Mude para 'master' se a sua branch principal tiver esse nome
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Baixa o código do seu repositório para a máquina do GitHub
+      # 1. Baixa o código do seu repositório (Atualizado para v5) 🚀
       - name: Baixar Código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      # 2. Configura o Java (necessário para compilar Android)
+      # 2. Configura o Java (Atualizado para v5) 🚀
       - name: Configurar Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '17'
