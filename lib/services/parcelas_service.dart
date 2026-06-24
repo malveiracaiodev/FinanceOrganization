@@ -37,35 +37,32 @@ class ParcelasService {
     await salvar(lista);
   }
 
-  /// 🚀 NOVO: Cadastrar Compra Parcelada Automatizada
-  /// Calcula o valor da parcela se o usuário passar o total, ou vice-versa,
-  /// e cria o objeto Parcela perfeitamente estruturado para a sua model.
+  /// 🚀 Cadastrar Compra Parcelada Automatizada
   static Future<void> cadastrarCompraParcelada({
-    required String nome,
+    required String descricao,
     required double valorTotal,
     required int totalParcelas,
-    double? valorDaParcela, // Opcional: Se não passar, o app calcula
+    double? valorDaParcela,
   }) async {
     final calculoParcela = valorDaParcela ?? (valorTotal / totalParcelas);
 
-    // Cria a estrutura baseada na sua Model 'Parcela'
-    // (Ajuste os nomes dos parâmetros se a sua classe Parcela usar nomes diferentes)
     final novaParcela = Parcela(
-      id: DateTime.now().millisecondsSinceEpoch.toString(), // ID único baseado no tempo
-      nome: nome,
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      descricao: descricao,
       valorTotal: valorTotal,
-      valorDoMes: calculoParcela,
+      valorParcela: calculoParcela,
       parcelaAtual: 1,
+      ativa: true,
       totalParcelas: totalParcelas,
     );
 
     await adicionarParcela(novaParcela);
   }
 
-  /// ✏️ NOVO: Editar Compra Parcelada Existente
+  /// ✏️ Editar Compra Parcelada Existente
   static Future<void> editarCompraParcelada(String id, {
-    required String novoNome,
-    required double novoValorDoMes,
+    required String novaDescricao,
+    required double novoValorParcela,
     required int novoTotalParcelas,
     required int parcelaAtual,
   }) async {
@@ -73,11 +70,15 @@ class ParcelasService {
     final index = lista.indexWhere((p) => p.id == id);
     
     if (index != -1) {
-      lista[index].nome = novoNome;
-      lista[index].valorDoMes = novoValorDoMes;
-      lista[index].totalParcelas = novoTotalParcelas;
-      lista[index].parcelaAtual = parcelaAtual;
-      lista[index].valorTotal = novoValorDoMes * novoTotalParcelas; // Recalcula o total
+      final p = lista[index];
+      lista[index] = p.copyWith(
+        descricao: novaDescricao,
+        valorParcela: novoValorParcela,
+        totalParcelas: novoTotalParcelas,
+        parcelaAtual: parcelaAtual,
+        valorTotal: novoValorParcela * novoTotalParcelas,
+        ativa: parcelaAtual <= novoTotalParcelas,
+      );
       
       await salvar(lista);
     }

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../core/theme/app_theme.dart';
-
-import '../../services/preferences_service.dart';
-import '../../pages/historico_page.dart';
-import '../../pages/controle_page.dart';
+import '../core/theme/app_theme.dart';
+import '../pages/dashboard_page.dart';
+import '../pages/historico_page.dart';
+import '../pages/parcelas_page.dart'; // 🔥 Nova aba de parcelamentos
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -22,7 +21,7 @@ class AppDrawer extends StatelessWidget {
   }
 
   void _navigate(BuildContext context, Widget page) {
-    Navigator.pop(context); // fecha drawer primeiro
+    Navigator.pop(context); // Fecha o drawer primeiro para evitar travamento visual
 
     Navigator.pushReplacement(
       context,
@@ -33,85 +32,85 @@ class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: const Color(0xFF0A0F1E),
+      backgroundColor: const Color(0xFF070B14), // Fundo espacial profundo escuro
       child: Column(
         children: [
-          const SizedBox(height: 50),
+          const SizedBox(height: 60),
 
-          Text(
-            'Finance Organization',
+          // 🌌 Cabeçalho Orbital do Drawer
+          const Text(
+            'FinanceControl',
             style: TextStyle(
-              color: AppTheme.primaryColor,
+              color: Colors.white,
               fontSize: 24,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'MARK I • PAINEL DE CONTROLE',
+            style: TextStyle(
+              color: AstraTheme.secondary,
+              fontSize: 11,
+              letterSpacing: 2,
               fontWeight: FontWeight.bold,
             ),
           ),
 
-          const SizedBox(height: 8),
-
-          const Text(
-            'Controle Financeiro Pessoal',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
-            ),
+          const SizedBox(height: 24),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.0),
+            child: Divider(color: Colors.white10, height: 1),
           ),
+          const SizedBox(height: 16),
 
-          const SizedBox(height: 20),
-
-          Divider(color: AppTheme.primaryColor),
-
+          // 🎛️ Itens de Navegação
           ListTile(
-            leading: Icon(Icons.dashboard, color: AppTheme.primaryColor),
-            title: const Text('Controle',
-                style: TextStyle(color: Colors.white)),
-            onTap: () => _navigate(context, const ControlePage()),
+            leading: const Icon(Icons.rocket_launch, color: AstraTheme.primary),
+            title: const Text('Dashboard', style: TextStyle(color: Colors.white, fontSize: 15)),
+            onTap: () => _navigate(context, const DashboardPage()),
           ),
 
           ListTile(
-            leading: Icon(Icons.settings, color: AppTheme.primaryColor),
-            title: const Text('Configurações',
-                style: TextStyle(color: Colors.white)),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/preferences');
-            },
+            leading: const Icon(Icons.credit_card, color: AstraTheme.primary),
+            title: const Text('Compras Parceladas', style: TextStyle(color: Colors.white, fontSize: 15)),
+            onTap: () => _navigate(context, const ParcelasPage()),
           ),
 
           ListTile(
-            leading: Icon(Icons.history, color: AppTheme.primaryColor),
-            title: const Text('Histórico',
-                style: TextStyle(color: Colors.white)),
+            leading: const Icon(Icons.history, color: AstraTheme.primary),
+            title: const Text('Histórico Mensal', style: TextStyle(color: Colors.white, fontSize: 15)),
             onTap: () => _navigate(context, const HistoricoPage()),
           ),
 
           ListTile(
-            leading: Icon(Icons.web, color: AppTheme.primaryColor),
-            title: const Text('Meu Site',
-                style: TextStyle(color: Colors.white)),
+            leading: const Icon(Icons.language, color: AstraTheme.primary),
+            title: const Text('Desenvolvedor (Site)', style: TextStyle(color: Colors.white, fontSize: 15)),
             onTap: _abrirSite,
           ),
 
           const Spacer(),
 
-          Text(
-            'MARK I',
+          // 🛡️ Rodapé de Identidade do Comandante
+          const Text(
+            'SISTEMA OPERACIONAL',
             style: TextStyle(
-              color: AppTheme.secondaryColor,
-              fontSize: 14,
+              color: Colors.white24,
+              fontSize: 10,
               letterSpacing: 3,
               fontWeight: FontWeight.bold,
             ),
           ),
-
-          const SizedBox(height: 16),
-
-          Image.asset(
-            'assets/meu_logotipo.png',
-            height: 90,
+          const SizedBox(height: 6),
+          const Text(
+            'v1.0.0',
+            style: TextStyle(
+              color: Colors.white12,
+              fontSize: 12,
+            ),
           ),
-
-          const SizedBox(height: 20),
+          const SizedBox(height: 30),
         ],
       ),
     );

@@ -1,4 +1,5 @@
 class Parcela {
+  final String id; // ID necessário para sabermos qual parcela deletar/editar
   final String descricao;
   final double valorTotal;
   final double valorParcela;
@@ -7,6 +8,7 @@ class Parcela {
   final bool ativa;
 
   const Parcela({
+    required this.id,
     required this.descricao,
     required this.valorTotal,
     required this.valorParcela,
@@ -26,6 +28,7 @@ class Parcela {
     final proxima = parcelaAtual + 1;
 
     return Parcela(
+      id: id,
       descricao: descricao,
       valorTotal: valorTotal,
       valorParcela: valorParcela,
@@ -35,9 +38,31 @@ class Parcela {
     );
   }
 
+  /// 🔁 copia com alterações (Padrão do seu projeto)
+  Parcela copyWith({
+    String? id,
+    String? descricao,
+    double? valorTotal,
+    double? valorParcela,
+    int? totalParcelas,
+    int? parcelaAtual,
+    bool? ativa,
+  }) {
+    return Parcela(
+      id: id ?? this.id,
+      descricao: descricao ?? this.descricao,
+      valorTotal: valorTotal ?? this.valorTotal,
+      valorParcela: valorParcela ?? this.valorParcela,
+      totalParcelas: totalParcelas ?? this.totalParcelas,
+      parcelaAtual: parcelaAtual ?? this.parcelaAtual,
+      ativa: ativa ?? this.ativa,
+    );
+  }
+
   /// 💾 serialização segura
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'descricao': descricao,
       'valorTotal': valorTotal,
       'valorParcela': valorParcela,
@@ -50,6 +75,7 @@ class Parcela {
   /// 🔐 desserialização robusta
   factory Parcela.fromMap(Map<String, dynamic> map) {
     return Parcela(
+      id: (map['id'] ?? '') as String,
       descricao: (map['descricao'] ?? '') as String,
       valorTotal: _parseDouble(map['valorTotal']),
       valorParcela: _parseDouble(map['valorParcela']),

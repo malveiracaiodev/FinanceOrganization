@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../core/theme/app_theme.dart';
+import '../core/theme/app_theme.dart'; // Mantém o import para ler o AstraTheme
 import '../widgets/app_drawer.dart';
 import '../widgets/fundo_cosmico.dart';
 import '../services/preferences_service.dart';
@@ -52,70 +52,78 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       drawer: const AppDrawer(),
       body: FundoCosmico(
         child: SafeArea(
           child: Center(
             child: _loading
-                ? const CircularProgressIndicator()
+                ? CircularProgressIndicator(color: theme.primaryColor)
                 : Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Image.asset(
-                          "assets/meu_logotipo.png",
-                          height: 140,
+                        // Ícone Espacial Centralizado como Fallback/Estilo se não quiser usar asset fixo
+                        Icon(
+                          Icons.blur_circular,
+                          size: 120,
+                          color: AstraTheme.primary.withOpacity(0.8),
                         ),
 
                         const SizedBox(height: 30),
 
-                        Text(
-                          "Finance Organization",
+                        const Text(
+                          "FinanceControl",
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 30,
+                            fontSize: 32,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryColor,
+                            letterSpacing: -1,
+                            color: Colors.white,
                           ),
                         ),
 
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 4),
 
                         const Text(
-                          "Controle financeiro simples, moderno e eficiente.",
+                          "MARK I",
+                          style: TextStyle(
+                            fontSize: 14,
+                            letterSpacing: 6,
+                            fontWeight: FontWeight.w600,
+                            color: AstraTheme.secondary,
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        const Text(
+                          "Controle financeiro orbital, moderno e inteligente.",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 16,
-                            color: Colors.white70,
+                            color: Colors.white60,
                           ),
                         ),
 
                         const SizedBox(height: 40),
 
+                        // 🚀 Botão de Entrada Orbital
                         SizedBox(
-                          width: 220,
+                          width: 240,
                           height: 50,
                           child: ElevatedButton.icon(
                             onPressed: _entrar,
-                            icon: const Icon(Icons.arrow_forward),
+                            icon: const Icon(Icons.bolt, size: 20),
                             label: Text(
                               _usuarioExiste
-                                  ? "Ir para o Dashboard"
-                                  : "Começar Agora",
+                                  ? "ENTRAR NO PAINEL"
+                                  : "INICIAR TRIPULAÇÃO",
+                              style: const TextStyle(letterSpacing: 1),
                             ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 50),
-
-                        Text(
-                          "MARK I",
-                          style: TextStyle(
-                            fontSize: 14,
-                            letterSpacing: 3,
-                            color: AppTheme.secondaryColor,
                           ),
                         ),
                       ],

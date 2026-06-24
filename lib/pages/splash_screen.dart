@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../services/preferences_service.dart';
 import '../services/controle_service.dart';
+import '../services/parcelas_service.dart'; // Importado para lidar com as parcelas na virada
 
 import 'dashboard_page.dart';
 import 'cadastro_page.dart';
-import 'widgets/fundo_cosmico.dart' as fundo;
+import '../widgets/fundo_cosmico.dart'; // Ajustado o caminho do import
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -45,13 +46,28 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _startApp() async {
     try {
+      // 1. Carrega os dados básicos de usuário e finanças
       final user = await PreferencesService.carregarUsuario();
       await ControleService.carregarControle();
+
+      // 2. 🔥 LÓGICA DO DIA 1º (Verificação de ciclo mensal)
+      if (user != null) {
+        // Verifica se o mês mudou desde a última execução salva
+        final bool mesMudou = await ControleService.verificarEAtualizarViradaMes();
+        
+        if (mesMudou) {
+          // Se o mês mudou, roda o processamento controlado das parcelas
+          await ParcelasService.processarMes();
+          // Recarrega o controle para garantir que a UI pegue os valores novos abastados
+          await ControleService.carregarControle();
+        }
+      }
 
       if (!mounted) return;
 
       setState(() => _loading = false);
 
+      // 3. Roteamento orbital baseado na existência do usuário
       if (user == null) {
         _goToCadastro();
       } else {
@@ -92,16 +108,17 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: fundo.FundoCosmico(
+      body: FundoCosmico( // Removido o alias 'fundo.' para ficar limpo
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ScaleTransition(
                 scale: _animation,
-                child: Image.asset(
-                  "assets/icone.png",
-                  height: 120,
+                child: Icon(
+                  Icons.rocket_launch, // Usando Icon temporário caso o asset dê alguma falha de path
+                  size: 100,
+                  color: Theme.of(context).primaryColor,
                 ),
               ),
 
@@ -110,18 +127,17 @@ class _SplashScreenState extends State<SplashScreen>
               const Text(
                 "FinanceControl Mark I",
                 style: TextStyle(
-                  color: Colors.cyan,
-                  fontSize: 22,
+                  color: Color(0xFF00D4FF), // Seu ciano elétrico do tema
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
                 ),
               ),
 
               const SizedBox(height: 10),
 
               Text(
-                _loading
-                    ? "Inicializando sistema..."
-                    : "Carregando concluído",
+                _loading ? "Inicializando sistemas de órbita..." : "Sistemas prontos.",
                 style: const TextStyle(
                   color: Colors.white54,
                   fontSize: 14,

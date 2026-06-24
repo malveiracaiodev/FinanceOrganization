@@ -1,5 +1,5 @@
 class HistoricoMensal {
-  final String mesAno;
+  final String mesAno; // 📅 Ex: "06/2026" (Chave única para divisão perfeita)
   final double ganhoFixo;
   final double ganhosAdicionais;
   final double gastosTotais;
@@ -11,9 +11,24 @@ class HistoricoMensal {
     required this.gastosTotais,
   });
 
-  /// 📊 resultado do mês
+  /// 📊 resultado líquido do mês
   double get resto =>
       ganhoFixo + ganhosAdicionais - gastosTotais;
+
+  /// 🔁 NOVO: Permite edição/cópia com alterações dos meses passados
+  HistoricoMensal copyWith({
+    String? mesAno,
+    double? ganhoFixo,
+    double? ganhosAdicionais,
+    double? gastosTotais,
+  }) {
+    return HistoricoMensal(
+      mesAno: mesAno ?? this.mesAno,
+      ganhoFixo: ganhoFixo ?? this.ganhoFixo,
+      ganhosAdicionais: ganhosAdicionais ?? this.ganhosAdicionais,
+      gastosTotais: gastosTotais ?? this.gastosTotais,
+    );
+  }
 
   /// 💾 serialização
   Map<String, dynamic> toMap() {

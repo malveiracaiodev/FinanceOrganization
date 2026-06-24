@@ -9,11 +9,14 @@ class ControleFinanceiro {
     required this.despesasPrevistas,
   });
 
-  double saldoFinal(double salarioBase) {
+  /// 💰 Calcula o saldo final do mês injetando o salário base 
+  /// e subtraindo também o total das parcelas vigentes na Mark I.
+  double saldoFinal(double salarioBase, {double totalParcelasDoMes = 0}) {
     return salarioBase +
         receitasExtras -
         despesas -
-        despesasPrevistas;
+        despesasPrevistas -
+        totalParcelasDoMes; // 🔥 Agora o parcelamento reduz o saldo real!
   }
 
   Map<String, dynamic> toMap() {
@@ -28,12 +31,9 @@ class ControleFinanceiro {
     Map<String, dynamic> map,
   ) {
     return ControleFinanceiro(
-      receitasExtras:
-          (map['receitasExtras'] ?? 0).toDouble(),
-      despesas:
-          (map['despesas'] ?? 0).toDouble(),
-      despesasPrevistas:
-          (map['despesasPrevistas'] ?? 0).toDouble(),
+      receitasExtras: _parseDouble(map['receitasExtras']),
+      despesas: _parseDouble(map['despesas']),
+      despesasPrevistas: _parseDouble(map['despesasPrevistas']),
     );
   }
 
@@ -50,5 +50,13 @@ class ControleFinanceiro {
       despesasPrevistas:
           despesasPrevistas ?? this.despesasPrevistas,
     );
+  }
+
+  /// 🧠 Mantendo o seu padrão de parser seguro para evitar falhas no JSON
+  static double _parseDouble(dynamic value) {
+    if (value == null) return 0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    return double.tryParse(value.toString()) ?? 0;
   }
 }

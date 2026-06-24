@@ -4,6 +4,10 @@ class Usuario {
   final String empresa;
   final String cargo;
   final double ganhoFixo;
+  
+  // 🌌 NOVOS CAMPOS: Gerenciamento do ciclo da Mark I
+  final double saldoAtual;
+  final int ultimoMesVerificado;
 
   const Usuario({
     required this.nome,
@@ -11,6 +15,8 @@ class Usuario {
     required this.empresa,
     required this.cargo,
     required this.ganhoFixo,
+    required this.saldoAtual,
+    required this.ultimoMesVerificado,
   });
 
   /// 👤 nome completo (UI helper)
@@ -23,6 +29,8 @@ class Usuario {
     String? empresa,
     String? cargo,
     double? ganhoFixo,
+    double? saldoAtual,
+    int? ultimoMesVerificado,
   }) {
     return Usuario(
       nome: nome ?? this.nome,
@@ -30,6 +38,8 @@ class Usuario {
       empresa: empresa ?? this.empresa,
       cargo: cargo ?? this.cargo,
       ganhoFixo: ganhoFixo ?? this.ganhoFixo,
+      saldoAtual: saldoAtual ?? this.saldoAtual,
+      ultimoMesVerificado: ultimoMesVerificado ?? this.ultimoMesVerificado,
     );
   }
 
@@ -41,6 +51,8 @@ class Usuario {
       'empresa': empresa,
       'cargo': cargo,
       'ganhoFixo': ganhoFixo,
+      'saldoAtual': saldoAtual,
+      'ultimoMesVerificado': ultimoMesVerificado,
     };
   }
 
@@ -52,6 +64,8 @@ class Usuario {
       empresa: (map['empresa'] ?? '') as String,
       cargo: (map['cargo'] ?? '') as String,
       ganhoFixo: _parseDouble(map['ganhoFixo']),
+      saldoAtual: _parseDouble(map['saldoAtual'] ?? map['ganhoFixo']), // Se o saldo for nulo no primeiro login, vira o ganho base
+      ultimoMesVerificado: (map['ultimoMesVerificado'] ?? DateTime.now().month) as int,
     );
   }
 
