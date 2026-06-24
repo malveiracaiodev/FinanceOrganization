@@ -5,6 +5,7 @@ import '../models/controle_financeiro.dart';
 import '../models/usuario.dart';
 import '../services/controle_service.dart';
 import '../services/preferences_service.dart';
+import '../services/parcelas_service.dart'; // 🔥 Motor de parcelas conectado
 import '../widgets/app_drawer.dart';
 import '../widgets/fundo_cosmico.dart';
 
@@ -16,12 +17,15 @@ class ControlePage extends StatefulWidget {
 }
 
 class _ControlePageState extends State<ControlePage> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  
   final receitaController = TextEditingController();
   final despesaController = TextEditingController();
   final previstoController = TextEditingController();
 
   Usuario? usuario;
   ControleFinanceiro? controle;
+  double totalParcelasMes = 0;
 
   bool carregando = true;
 
@@ -32,59 +36,45 @@ class _ControlePageState extends State<ControlePage> {
   }
 
   Future<void> carregarDados() async {
-    final usuarioCarregado =
-        await PreferencesService.carregarUsuario();
-
-    final controleCarregado =
-        await ControleService.carregarControle();
+    final usuarioCarregado = await PreferencesService.carregarUsuario();
+    final controleCarregado = await ControleService.carregarControle();
+    final parcelas = await ParcelasService.calcularTotalMes();
 
     if (!mounted) return;
 
     setState(() {
       usuario = usuarioCarregado;
       controle = controleCarregado;
+      totalParcelasMes = parcelas;
       carregando = false;
     });
   }
 
   bool _valorValido(String text) {
-    final valor =
-        double.tryParse(text.replaceAll(',', '.'));
+    final valor = double.tryParse(text.replaceAll(',', '.'));
     return valor != null && valor > 0;
   }
 
   Future<void> adicionarReceita() async {
     if (!_valorValido(receitaController.text)) return;
-
-    final valor =
-        double.parse(receitaController.text.replaceAll(',', '.'));
-
+    final valor = double.parse(receitaController.text.replaceAll(',', '.'));
     await ControleService.adicionarReceita(valor);
-
     receitaController.clear();
     await carregarDados();
   }
 
   Future<void> adicionarDespesa() async {
     if (!_valorValido(despesaController.text)) return;
-
-    final valor =
-        double.parse(despesaController.text.replaceAll(',', '.'));
-
+    final valor = double.parse(despesaController.text.replaceAll(',', '.'));
     await ControleService.adicionarDespesa(valor);
-
     despesaController.clear();
     await carregarDados();
   }
 
   Future<void> adicionarPrevisto() async {
     if (!_valorValido(previstoController.text)) return;
-
-    final valor =
-        double.parse(previstoController.text.replaceAll(',', '.'));
-
+    final valor = double.parse(previstoController.text.replaceAll(',', '.'));
     await ControleService.adicionarPrevisto(valor);
-
     previstoController.clear();
     await carregarDados();
   }
@@ -93,18 +83,24 @@ class _ControlePageState extends State<ControlePage> {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Encerrar Mês'),
+        backgroundColor: const Color(0xFF0A0F1E),
+        title: const Text(
+          'ENCERRAR CICLO MENSAL',
+          style: TextStyle(color: AstraTheme.secondary, fontSize: 14, letterSpacing: 1),
+        ),
         content: const Text(
-          'Deseja realmente encerrar o mês atual? Isso irá zerar os dados.',
+          'Confirmar o encerramento da órbita atual? Os dados correntes serão compilados no Histórico e o painel redefinido.',
+          style: TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: const Text('CANCELAR', style: TextStyle(color: Colors.white38)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Confirmar'),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            child: const Text('CONFIRMAR FECHAMENTO'),
           ),
         ],
       ),
@@ -113,127 +109,159 @@ class _ControlePageState extends State<ControlePage> {
     if (confirmar != true) return;
 
     await ControleService.encerrarMes();
-
     await carregarDados();
 
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Mês encerrado com sucesso!'),
-      ),
+      const SnackBar(content: Text('Ciclo mensal encerrado e arquivado com sucesso!')),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     final saldo = controle != null && usuario != null
-        ? controle!.saldoFinal(usuario!.ganhoFixo)
+        ? controle!.saldoFinal(usuario!.ganhoFixo, totalParcelasDoMes: totalParcelasMes)
         : 0.0;
 
     return Scaffold(
+      key: _scaffoldKey,
       drawer: const AppDrawer(),
       body: FundoCosmico(
         child: SafeArea(
           child: carregando
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(child: CircularProgressIndicator(color: theme.primaryColor))
               : ListView(
                   padding: const EdgeInsets.all(20),
+                  physics: const BouncingScrollPhysics(),
                   children: [
-                    Text(
-                      'Olá, ${usuario!.nome}',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: AppTheme.primaryColor,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    // 🌌 Barra de Navegação Superior
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.menu, color: Colors.white, size: 28),
+                          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                        ),
+                        const Text(
+                          "LANÇAMENTOS OPERACIONAIS",
+                          style: TextStyle(
+                            color: Colors.white54,
+                            fontSize: 12,
+                            letterSpacing: 2,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
-
                     const SizedBox(height: 20),
 
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          children: [
-                            const Text('Saldo Atual'),
-                            const SizedBox(height: 10),
-                            Text(
-                              'R\$ ${saldo.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontSize: 30,
-                                color: AppTheme.secondaryColor,
-                                fontWeight: FontWeight.bold,
-                              ),
+                    // 💎 Mostrador de Saldo Real Dinâmico
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.03),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Colors.white.withOpacity(0.08)),
+                      ),
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        children: [
+                          const Text(
+                            'SALDO DINÂMICO REAL',
+                            style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'R\$ ${saldo.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 34,
+                              color: AstraTheme.secondary,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: -0.5,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
 
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            _linhaResumo(
-                              'Salário Base',
-                              usuario!.ganhoFixo,
-                            ),
-                            _linhaResumo(
-                              'Receitas Extras',
-                              controle!.receitasExtras,
-                            ),
-                            _linhaResumo(
-                              'Despesas',
-                              controle!.despesas,
-                            ),
-                            _linhaResumo(
-                              'Previstos',
-                              controle!.despesasPrevistas,
-                            ),
-                          ],
-                        ),
+                    // 📊 Painel de Resumos
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.01),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white.withOpacity(0.04)),
+                      ),
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                        children: [
+                          _linhaResumo('Salário Base', usuario!.ganhoFixo, Colors.cyanAccent),
+                          _linhaResumo('Receitas Extras', controle!.receitasExtras, Colors.greenAccent),
+                          _linhaResumo('Despesas Diárias', controle!.despesas, Colors.redAccent),
+                          _linhaResumo('Despesas Previstas', controle!.despesasPrevistas, Colors.orangeAccent),
+                          _linhaResumo('Fatura de Parcelas', totalParcelasMes, const Color(0xFFE040FB)),
+                        ],
                       ),
                     ),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 28),
 
+                    // 🛠️ Módulos de Entrada de Dados
                     _campoFinanceiro(
                       controller: receitaController,
-                      titulo: 'Receita Extra',
-                      botao: 'Adicionar Receita',
+                      titulo: 'RECEITA EXTRA',
+                      botao: 'INJETAR CRÉDITO',
                       onPressed: adicionarReceita,
+                      corIcone: Colors.greenAccent,
+                      icone: Icons.add_chart,
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
 
                     _campoFinanceiro(
                       controller: despesaController,
-                      titulo: 'Despesa',
-                      botao: 'Adicionar Despesa',
+                      titulo: 'REGISTRAR DESPESA',
+                      botao: 'DEBITAR GASTO',
                       onPressed: adicionarDespesa,
+                      corIcone: Colors.redAccent,
+                      icone: Icons.money_off,
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
 
                     _campoFinanceiro(
                       controller: previstoController,
-                      titulo: 'Despesa Prevista',
-                      botao: 'Adicionar Previsto',
+                      titulo: 'PROJETAR DESPESA PREVISTA',
+                      botao: 'ADICIONAR PREVISÃO',
                       onPressed: adicionarPrevisto,
+                      corIcone: Colors.orangeAccent,
+                      icone: Icons.analytics,
                     ),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 32),
 
-                    ElevatedButton.icon(
-                      onPressed: encerrarMes,
-                      icon: const Icon(Icons.calendar_month),
-                      label: const Text('Encerrar Mês'),
+                    // 🚨 Botão de Fechamento de Mês
+                    SizedBox(
+                      height: 50,
+                      child: ElevatedButton.icon(
+                        onPressed: encerrarMes,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withOpacity(0.05),
+                          side: const BorderSide(color: Colors.redAccent, width: 1),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        icon: const Icon(Icons.archive, color: Colors.redAccent, size: 20),
+                        label: const Text(
+                          'FINALIZAR E ARQUIVAR MÊS',
+                          style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, letterSpacing: 1),
+                        ),
+                      ),
                     ),
+                    const SizedBox(height: 20),
                   ],
                 ),
         ),
@@ -241,14 +269,17 @@ class _ControlePageState extends State<ControlePage> {
     );
   }
 
-  Widget _linhaResumo(String titulo, double valor) {
+  Widget _linhaResumo(String titulo, double valor, Color cor) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(titulo),
-          Text('R\$ ${valor.toStringAsFixed(2)}'),
+          Text(titulo, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+          Text(
+            'R\$ ${valor.toStringAsFixed(2)}',
+            style: TextStyle(color: cor, fontWeight: FontWeight.bold, fontSize: 14),
+          ),
         ],
       ),
     );
@@ -259,35 +290,70 @@ class _ControlePageState extends State<ControlePage> {
     required String titulo,
     required String botao,
     required VoidCallback onPressed,
+    required Color corIcone,
+    required IconData icone,
   }) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Text(
-              titulo,
-              style: TextStyle(
-                color: AppTheme.primaryColor,
-                fontWeight: FontWeight.bold,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.01),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.04)),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icone, color: corIcone, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                titulo,
+                style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1),
               ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                prefixText: 'R\$ ',
-                border: OutlineInputBorder(),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 46,
+                  child: TextField(
+                    controller: controller,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: const TextStyle(color: Colors.white, fontSize: 15),
+                    decoration: InputDecoration(
+                      prefixText: 'R\$ ',
+                      prefixStyle: TextStyle(color: corIcone, fontWeight: FontWeight.bold),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: AstraTheme.primary),
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: onPressed,
-              child: Text(botao),
-            ),
-          ],
-        ),
+              const SizedBox(width: 12),
+              SizedBox(
+                height: 46,
+                child: ElevatedButton(
+                  onPressed: onPressed,
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                  child: Text(botao, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

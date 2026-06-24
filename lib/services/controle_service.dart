@@ -1,151 +1,92 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../models/controle_financeiro.dart';
+import '../models/historico_mensal.dart';
 import 'preferences_service.dart';
 import 'historico_service.dart';
+import 'parcelas_service.dart'; // 🔥 Importação do motor de parcelas integrada
 
 class ControleService {
-  static const String _key = 'controle_financeiro';
-  static ControleFinanceiro? _cache;
+  static const String _key = 'controle_financeiro_key';
 
-  /// 🔄 carregar controle
+  // 📥 Carrega os dados do controle financeiro do mês atual
   static Future<ControleFinanceiro> carregarControle() async {
-    if (_cache != null) return _cache!;
-
     final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getString(_key);
+    final jsonString = prefs.getString(_key);
 
-    if (data == null) {
-      _cache = const ControleFinanceiro(
+    if (jsonString == null) {
+      return ControleFinanceiro(
         receitasExtras: 0,
         despesas: 0,
         despesasPrevistas: 0,
       );
-      return _cache!;
     }
 
-    final map = jsonDecode(data);
-
-    _cache = ControleFinanceiro.fromMap(
-      Map<String, dynamic>.from(map),
-    );
-
-    return _cache!;
+    return ControleFinanceiro.fromJson(jsonDecode(jsonString));
   }
 
-  /// 💾 salvar estado
-  static Future<void> _salvar(ControleFinanceiro controle) async {
+  // 💾 Salva o estado do mês atual
+  static Future<void> salvarControle(ControleFinanceiro controle) async {
     final prefs = await SharedPreferences.getInstance();
-
-    await prefs.setString(
-      _key,
-      jsonEncode(controle.toMap()),
-    );
-
-    _cache = controle;
+    await prefs.setString(_key, jsonEncode(controle.toJson()));
   }
 
-  /// ➕ receita
+  // 🟢 Adiciona uma receita extra
   static Future<void> adicionarReceita(double valor) async {
-    final atual = await carregarControle();
-
-    final novo = atual.copyWith(
-      receitasExtras: atual.receitasExtras + valor,
-    );
-
-    await _salvar(novo);
+    final controle = await carregarControle();
+    controle.receitasExtras += valor;
+    await salvarControle(controle);
   }
 
-  /// ➖ despesa
+  // 🔴 Adiciona uma despesa diária
   static Future<void> adicionarDespesa(double valor) async {
-    final atual = await carregarControle();
-
-    final novo = atual.copyWith(
-      despesas: atual.despesas + valor,
-    );
-
-    await _salvar(novo);
+    final controle = await carregarControle();
+    controle.despesas += valor;
+    await salvarControle(controle);
   }
 
-  /// 📉 previsto
+  // 🟡 Adiciona uma despesa prevista
   static Future<void> adicionarPrevisto(double valor) async {
-    final atual = await carregarControle();
-
-    final novo = atual.copyWith(
-      despesasPrevistas: atual.despesasPrevistas + valor,
-    );
-
-    await _salvar(novo);
+    final controle = await carregarControle();
+    controle.despesasPrevistas += valor;
+    await salvarControle(controle);
   }
 
-  /// 🔄 encerra mês (SEM reset automático invisível)
-  static Future<ControleFinanceiro> encerrarMes() async {
-    final atual = await carregarControle();
-    final snapshot = atual;
+  // 🚀 Compila os dados correntes, inclui as parcelas e encerra a órbita do mês
+  static Future<void> encerrarMes() async {
+    final controle = await carregarControle();
+    final usuario = await PreferencesService.carregarUsuario();
+    
+    // 🔥 Captura as parcelas vigentes no exato momento do fechamento
+    final totalParcelasMes = await ParcelasService.calcularTotalMes();
 
-    final reset = const ControleFinanceiro(
+    if (usuario == null) return;
+
+    // Formata o marcador temporal do fechamento (Ex: "06/2026")
+    final dataAtual = DateTime.now();
+    final mesAnoFormatado = "${dataAtual.month.toString().padLeft(2, '0')}/${dataAtual.year}";
+
+    // Agrupa os gastos reais (Despesas do dia + a fatura do cartão parcelado)
+    final gastosSomados = controle.despesas + totalParcelasMes;
+
+    // Instancia o modelo de histórico unificado
+    final novoHistorico = HistoricoMensal(
+      mesAno: mesAnoFormatado,
+      ganhoFixo: usuario.ganhoFixo,
+      ganhosAdicionais: controle.receitasExtras,
+      gastosTotais: gastosSomados,
+    );
+
+    // Envia para o arquivo histórico persistente
+    await HistoricoService.adicionar(novoHistorico);
+
+    // Zera os dados do mês atual para iniciar o novo ciclo operacional
+    final controleResetado = ControleFinanceiro(
       receitasExtras: 0,
       despesas: 0,
       despesasPrevistas: 0,
     );
-
-    await _salvar(reset);
-    return snapshot; // 👈 importante para histórico
-  }
-
-  /// 📊 saldo atual
-  static Future<double> getSaldo(double salarioBase) async {
-    final controle = await carregarControle();
-    return controle.saldoFinal(salarioBase);
-  }
-
-  /// 🧹 limpar cache
-  static void limparCache() {
-    _cache = null;
-  }
-
-  /// 🔁 update completo (avançado)
-  static Future<void> atualizar(ControleFinanceiro novo) async {
-    await _salvar(novo);
-  }
-
-  /// 🌌 NOVO: Lógica Automatizada do Dia 1º / Virada de Mês
-  /// Essa função roda em background na Splash de forma segura.
-  static Future<bool> verificarEAtualizarViradaMes() async {
-    final usuario = await PreferencesService.carregarUsuario();
-    if (usuario == null) return false;
-
-    final agora = DateTime.now();
-    final mesAtual = agora.month;
-
-    // Se o mês atual for diferente do último mês verificado guardado no usuário
-    if (usuario.ultimoMesVerificado != mesAtual) {
-      
-      // 1. Tira o snapshot do mês que passou para mandar para o histórico
-      final snapshotMesPassado = await encerrarMes();
-      
-      // 2. Salva o fechamento no seu HistoricoService
-      await HistoricoService.salvarNoHistorico(
-        mes: usuario.ultimoMesVerificado,
-        ano: agora.year,
-        dados: snapshotMesPassado,
-      );
-
-      // 3. Atualiza o saldo do usuário: Novo Saldo = Saldo Atual + Ganho Mensal Base
-      final novoSaldo = usuario.saldoAtual + usuario.ganhoFixo;
-      
-      final usuarioAtualizado = usuario.copyWith(
-        saldoAtual: novoSaldo,
-        ultimoMesVerificado: mesAtual,
-      );
-
-      // 4. Grava os novos dados do usuário via PreferencesService
-      await PreferencesService.salvarUsuario(usuarioAtualizado);
-      
-      return true; // Informa que o mês mudou para a Splash avançar as parcelas
-    }
-
-    return false; // Continua na mesma órbita mensal
+    
+    await salvarControle(controleResetado);
   }
 }
