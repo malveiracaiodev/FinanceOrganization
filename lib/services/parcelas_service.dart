@@ -1,221 +1,111 @@
-import 'package:flutter/material.dart';
-
-import '../core/theme/app_theme.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/parcela.dart';
-import '../services/parcelas_service.dart';
-import '../widgets/app_drawer.dart';
-import '../widgets/fundo_cosmico.dart';
 
-class ParcelasPage extends StatefulWidget {
-  const ParcelasPage({super.key});
+class ParcelasService {
+  static const String _key = 'parcelas';
+  static List<Parcela>? _cache;
 
-  @override
-  State<ParcelasPage> createState() => _ParcelasPageState();
-}
+  static Future<List<Parcela>> carregar() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getStringList(_key) ?? [];
 
-class _ParcelasPageState extends State<ParcelasPage> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  
-  List<Parcela> parcelas = [];
-  bool carregando = true;
+    _cache = data
+        .map((e) => Parcela.fromJson(jsonDecode(e) as Map<String, dynamic>))
+        .toList();
 
-  @override
-  void initState() {
-    super.initState();
-    carregar();
+    return _cache!;
   }
 
-  Future<void> carregar() async {
-    // 🔥 Alinhado com o seu original: ParcelasService.carregar()
-    final dados = await ParcelasService.carregar();
-    if (!mounted) return;
-    setState(() {
-      parcelas = dados;
-      carregando = false;
-    });
+  static Future<void> salvar(List<Parcela> lista) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+      _key,
+      lista.map((e) => jsonEncode(e.toJson())).toList(),
+    );
+    _cache = List.from(lista);
   }
 
-  Future<void> excluir(String id) async {
-    // 🔥 Alinhado com o seu original: ParcelasService.removerCompraParcelada()
-    await ParcelasService.removerCompraParcelada(id);
-    await carregar();
+  static Future<void> adicionarParcela(Parcela p) async {
+    final lista = await carregar();
+    lista.add(p);
+    await salvar(lista);
   }
 
-  Future<void> abrirFormulario() async {
-    final descController = TextEditingController();
-    final totalController = TextEditingController();
-    final qtdController = TextEditingController();
+  static Future<void> cadastrarCompraParcelada({
+    required String descricao,
+    required double valorTotal,
+    required int totalParcelas,
+    double? valorDaParcela,
+  }) async {
+    final calculoParcela = valorDaParcela ?? (valorTotal / totalParcelas);
 
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0A0F1E),
-        title: const Text(
-          "NOVO AGENDAMENTO DE PARCELA",
-          style: TextStyle(color: AstraTheme.secondary, fontSize: 13, letterSpacing: 1),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: descController,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: "Descrição (Ex: Notebook)",
-                labelStyle: TextStyle(color: Colors.white54, fontSize: 13),
-              ),
-            ),
-            TextField(
-              controller: totalController,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: "Valor Total (R\$)",
-                labelStyle: TextStyle(color: Colors.white54, fontSize: 13),
-              ),
-            ),
-            TextField(
-              controller: qtdController,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: "Quantidade de Parcelas",
-                labelStyle: TextStyle(color: Colors.white54, fontSize: 13),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text("CANCELAR", style: TextStyle(color: Colors.white38)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text("AGENDAR"),
-          ),
-        ],
-      ),
+    final novaParcela = Parcela(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      descricao: descricao,
+      valorTotal: valorTotal,
+      valorParcela: calculoParcela,
+      parcelaAtual: 1,
+      ativa: true,
+      totalParcelas: totalParcelas,
     );
 
-    if (confirmar != true) return;
-
-    final vTotal = double.tryParse(totalController.text.replaceAll(',', '.')) ?? 0;
-    final totalP = int.tryParse(qtdController.text) ?? 1;
-
-    if (descController.text.isEmpty || vTotal <= 0) return;
-
-    // 🔥 Integrado direto com o seu método inteligente automatizado!
-    await ParcelasService.cadastrarCompraParcelada(
-      descricao: descController.text,
-      valorTotal: vTotal,
-      totalParcelas: totalP,
-    );
-
-    await carregar();
+    await adicionarParcela(novaParcela);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  static Future<void> editarCompraParcelada(
+    String id, {
+    required String novaDescricao,
+    required double novoValorParcela,
+    required int novoTotalParcelas,
+    required int parcelaAtual,
+  }) async {
+    final lista = await carregar();
+    final index = lista.indexWhere((p) => p.id == id);
 
-    return Scaffold(
-      key: _scaffoldKey,
-      drawer: const AppDrawer(),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AstraTheme.primary,
-        onPressed: abrirFormulario,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-      body: FundoCosmico(
-        child: SafeArea(
-          child: carregando
-              ? Center(child: CircularProgressIndicator(color: theme.primaryColor))
-              : Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.menu, color: Colors.white, size: 28),
-                            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                          ),
-                          const Text(
-                            "CRONOGRAMA DE PARCELAS",
-                            style: TextStyle(
-                              color: Colors.white54,
-                              fontSize: 12,
-                              letterSpacing: 2,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
+    if (index != -1) {
+      final p = lista[index];
+      lista[index] = p.copyWith(
+        descricao: novaDescricao,
+        valorParcela: novoValorParcela,
+        totalParcelas: novoTotalParcelas,
+        parcelaAtual: parcelaAtual,
+        valorTotal: novoValorParcela * novoTotalParcelas,
+        ativa: parcelaAtual <= novoTotalParcelas,
+      );
+      await salvar(lista);
+    }
+  }
 
-                      Expanded(
-                        child: parcelas.isEmpty
-                            ? const Center(
-                                child: Text(
-                                  "Nenhum parcelamento ativo no radar.",
-                                  style: TextStyle(color: Colors.white38),
-                                ),
-                              )
-                            : ListView.builder(
-                                itemCount: parcelas.length,
-                                physics: const BouncingScrollPhysics(),
-                                itemBuilder: (context, index) {
-                                  final p = parcelas[index];
+  static Future<void> removerCompraParcelada(String id) async {
+    final lista = await carregar();
+    lista.removeWhere((p) => p.id == id);
+    await salvar(lista);
+  }
 
-                                  return Container(
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.02),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(color: Colors.white.withOpacity(0.05)),
-                                    ),
-                                    child: ListTile(
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      title: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              p.descricao,
-                                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          Text(
-                                            "R\$ ${p.valorParcela.toStringAsFixed(2)}/mês",
-                                            style: const TextStyle(color: AstraTheme.secondary, fontWeight: FontWeight.bold, fontSize: 14),
-                                          ),
-                                        ],
-                                      ),
-                                      subtitle: Padding(
-                                        padding: const EdgeInsets.only(top: 6.0),
-                                        child: Text(
-                                          "Total: R\$ ${p.valorTotal.toStringAsFixed(2)} | Progresso: ${p.parcelaAtual}x de ${p.totalParcelas}x",
-                                          style: const TextStyle(color: Colors.white38, fontSize: 12),
-                                        ),
-                                      ),
-                                      trailing: IconButton(
-                                        icon: const Icon(Icons.delete_sweep, color: Colors.redAccent, size: 24),
-                                        onPressed: () => excluir(p.id),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-                    ],
-                  ),
-                ),
-        ),
-      ),
-    );
+  static Future<double> calcularTotalMes() async {
+    final lista = await carregar();
+    double total = 0;
+    for (final p in lista) {
+      if (p.parcelaAtual <= p.totalParcelas) {
+        total += p.valorDoMes;
+      }
+    }
+    return total;
+  }
+
+  static Future<void> processarMes() async {
+    final lista = await carregar();
+    final List<Parcela> atualizada = [];
+    
+    for (final p in lista) {
+      atualizada.add(p.avancarParcela());
+    }
+
+    await salvar(atualizada);
+  }
+
+  static void limparCache() {
+    _cache = null;
   }
 }

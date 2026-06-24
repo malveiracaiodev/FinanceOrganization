@@ -3,39 +3,43 @@ name: Compilar APK - Mark I
 on:
   push:
     branches:
-      - main # Mude para 'master' se a sua branch principal tiver esse nome
+      - main # 💡 Mude para 'master' se a sua branch principal tiver esse nome
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Baixa o código do seu repositório (Atualizado para v5) 🚀
+      # 1. Baixa o código limpo do seu repositório para a máquina virtual
       - name: Baixar Código
         uses: actions/checkout@v5
 
-      # 2. Configura o Java (Atualizado para v5) 🚀
+      # 2. Configura o Java na versão correta para o ecossistema Android
       - name: Configurar Java
         uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      # 3. Configura o Flutter na máquina virtual
+      # 3. Configura o Flutter estável no servidor do GitHub
       - name: Configurar Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      # 4. Baixa as dependências do seu pubspec.yaml
+      # 4. 🔥 FAXINA OPERACIONAL: Força o compilador a reindexar todas as classes e imports
+      - name: Limpar Cache do Flutter
+        run: flutter clean
+
+      # 5. Baixa as dependências e gera o mapa de libs do pubspec.yaml do zero
       - name: Instalar Dependências
         run: flutter pub get
 
-      # 5. Roda o comando mágico para compilar o APK de forma limpa
+      # 6. Compila o APK no modo Release pronto para instalação
       - name: Compilar APK
         run: flutter build apk --release
 
-      # 6. Pega o arquivo gerado e disponibiliza para download
+      # 7. Coleta o arquivo binário gerado e gera o link de download na aba Actions
       - name: Disponibilizar APK para Download
         uses: actions/upload-artifact@v4
         with:
