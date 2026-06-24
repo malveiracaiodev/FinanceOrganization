@@ -1,0 +1,260 @@
+import 'package:flutter/material.dart';
+import 'dart:ui';
+
+class AstraTheme {
+  static const Color surface = Color(0xFF051424);
+  static const Color surfaceBright = Color(0xFF2C3A4C);
+  static const Color primary = Color(0xFF00EEFC);
+  static const Color secondary = Color(0xFFE2F9FB);
+  static const Color error = Color(0xFFFF5252);
+  static const Color background = Color(0xFF010F1F);
+  
+  static ThemeData get themeData {
+    return ThemeData(
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: background,
+      primaryColor: primary,
+      colorScheme: ColorScheme.dark(
+        surface: surface,
+        primary: primary,
+        secondary: secondary,
+        error: error,
+      ),
+      fontFamily: 'Space Grotesk',
+    );
+  }
+}
+
+// --- Dashboard Screen ---
+class DashboardScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          // Background "Space" effect could be a gradient or particles
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFF051424), Color(0xFF010F1F)],
+              ),
+            ),
+          ),
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(),
+                  SizedBox(height: 30),
+                  _buildBalanceCard(),
+                  SizedBox(height: 20),
+                  _buildTransactionRow(),
+                  SizedBox(height: 20),
+                  _buildBudgetProgress(),
+                  SizedBox(height: 30),
+                  _buildRecentMissions(),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: _buildBottomNav(),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.rocket_launch, color: AstraTheme.primary),
+            SizedBox(width: 10),
+            Text('FINANÇAS MARK I', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: -1)),
+          ],
+        ),
+        CircleAvatar(
+          backgroundColor: Colors.white10,
+          child: Icon(Icons.notifications_none, color: Colors.white),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBalanceCard() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Column(
+        children: [
+          Text('SALDO ESTELAR ATUAL', style: TextStyle(color: Colors.white60, fontSize: 12, letterSpacing: 1.2)),
+          SizedBox(height: 8),
+          Text('R\$ 42.750,80', style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: AstraTheme.primary)),
+          SizedBox(height: 12),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AstraTheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text('+ 12.4% este mês', style: TextStyle(color: AstraTheme.primary, fontSize: 12)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransactionRow() {
+    return Row(
+      children: [
+        Expanded(child: _buildMiniCard('ENTRADAS', 'R\$ 15.200,00', AstraTheme.primary, Icons.arrow_downward)),
+        SizedBox(width: 16),
+        Expanded(child: _buildMiniCard('SAÍDAS', 'R\$ 8.450,20', Colors.pinkAccent, Icons.arrow_upward)),
+      ],
+    );
+  }
+
+  Widget _buildMiniCard(String label, String value, Color color, IconData icon) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(label, style: TextStyle(color: Colors.white38, fontSize: 10)),
+              Icon(icon, size: 16, color: color),
+            ],
+          ),
+          SizedBox(height: 8),
+          Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          SizedBox(height: 8),
+          Container(height: 2, width: 40, color: color),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBudgetProgress() {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('ORÇAMENTO DO MÊS', style: TextStyle(color: Colors.white38, fontSize: 12)),
+                Text('Ciclo: até 01/Nov', style: TextStyle(fontSize: 14)),
+                SizedBox(height: 20),
+                Text('Restante', style: TextStyle(color: Colors.white38, fontSize: 12)),
+                Text('R\$ 2.549,80', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+          Container(
+            height: 100,
+            width: 100,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CircularProgressIndicator(
+                  value: 0.7,
+                  strokeWidth: 8,
+                  backgroundColor: Colors.white10,
+                  valueColor: AlwaysStoppedAnimation<Color>(AstraTheme.primary),
+                ),
+                Text('70%', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentMissions() {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Missões Recentes', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text('Ver Todos', style: TextStyle(color: AstraTheme.primary, fontSize: 14)),
+          ],
+        ),
+        SizedBox(height: 16),
+        _buildMissionItem('Supermercado Orbital', 'Hoje, 14:20', 'R\$ 452,30', Icons.shopping_cart),
+        _buildMissionItem('Terminal Mark V', 'Ontem, 09:15', '- R\$ 1.200,00', Icons.laptop),
+      ],
+    );
+  }
+
+  Widget _buildMissionItem(String title, String subtitle, String amount, IconData icon) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.02),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(12)),
+            child: Icon(icon, color: AstraTheme.primary),
+          ),
+          SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(subtitle, style: TextStyle(color: Colors.white38, fontSize: 12)),
+              ],
+            ),
+          ),
+          Text(amount, style: TextStyle(fontWeight: FontWeight.bold, color: amount.startsWith('+') ? AstraTheme.primary : Colors.white)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNav() {
+    return BottomNavigationBar(
+      backgroundColor: AstraTheme.surface,
+      selectedItemColor: AstraTheme.primary,
+      unselectedItemColor: Colors.white38,
+      type: BottomNavigationBarType.fixed,
+      items: [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+        BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+        BottomNavigationBarItem(icon: Icon(Icons.add_circle, size: 40, color: AstraTheme.primary), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Stats'),
+        BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+      ],
+    );
+  }
+}
