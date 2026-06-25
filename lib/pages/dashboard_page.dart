@@ -5,7 +5,7 @@ import '../../models/usuario.dart';
 import '../../models/controle_financeiro.dart';
 import '../../services/preferences_service.dart';
 import '../../services/controle_service.dart';
-import '../../services/parcelas_service.dart'; // 🔥 Conexão com o motor de parcelamentos
+import '../../services/parcelas_service.dart'; 
 import '../../widgets/app_drawer.dart';
 import '../../widgets/fundo_cosmico.dart';
 
@@ -21,8 +21,8 @@ class _DashboardPageState extends State<DashboardPage> {
   Usuario? usuario;
   ControleFinanceiro? controle;
   double totalParcelasMes = 0;
-
   bool carregando = true;
+  int _currentBottomIndex = 0; // Controle da BottomBar do Stitch
 
   @override
   void initState() {
@@ -33,7 +33,6 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<void> carregarDados() async {
     final user = await PreferencesService.carregarUsuario();
     final ctrl = await ControleService.carregarControle();
-    // 🔥 Puxa o valor total das parcelas vigentes neste mês
     final parcelas = await ParcelasService.calcularTotalMes();
 
     if (!mounted) return;
@@ -46,237 +45,315 @@ class _DashboardPageState extends State<DashboardPage> {
     });
   }
 
-  String getStatusFinanceiro(double saldo) {
-    if (usuario == null) return "";
-    if (saldo >= usuario!.ganhoFixo * 0.2) {
-      return "Sistemas Operando: Saúde excelente 🟢";
-    } else if (saldo >= 0) {
-      return "Sistemas Operando: Órbita estável 🟡";
-    } else {
-      return "Aviso Critico: Déficit na Órbita 🔴";
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
-    // Calcula o saldo descontando também a fatura de parcelas do mês atual
     final saldoReal = controle != null && usuario != null
         ? controle!.saldoFinal(usuario!.ganhoFixo, totalParcelasDoMes: totalParcelasMes)
         : 0.0;
 
+    // Cálculo dinâmico para o medidor circular de orçamento
+    final totalGasto = controle != null ? (controle!.despesas + totalParcelasMes) : 0.0;
+    final orcamentoTotal = usuario != null ? usuario!.ganhoFixo : 1.0;
+    final double percentualConsumido = (totalGasto / orcamentoTotal).clamp(0.0, 1.0);
+    final double restanteOrcamento = (orcamentoTotal - totalGasto).clamp(0.0, double.infinity);
+
     return Scaffold(
       key: _scaffoldKey,
       drawer: const AppDrawer(),
+      backgroundColor: const Color(0xFF060B16), // Fundo base ultra-dark do mockup
       body: FundoCosmico(
         child: carregando
-            ? Center(child: CircularProgressIndicator(color: theme.primaryColor))
+            ? const Center(child: CircularProgressIndicator(color: Color(0xFF00E5FF)))
             : SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 🌌 Barra de Controle Superior (Abertura do Drawer)
-                      Row(
+                child: Column(
+                  children: [
+                    // 🛸 Top Navigation Bar (Stitch Design)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.menu, color: Colors.white, size: 28),
+                            icon: const Icon(Icons.rocket_launch_outlined, color: Colors.white, size: 26),
                             onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                           ),
+                          const Text(
+                            "FINANÇAS MARK I",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
                           IconButton(
-                            icon: const Icon(Icons.refresh, color: Colors.white60),
+                            icon: const Icon(Icons.notifications_none_outlined, color: Colors.white80, size: 24),
                             onPressed: () {
-                              setState(() => carregando = true);
-                              carregarDados();
+                              // Ação de notificações futuras
                             },
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                    ),
 
-                      Text(
-                        "Olá, ${usuario!.nome}",
-                        style: const TextStyle(
-                          color: AstraTheme.primary,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
+                    // 🌌 Área de Rolagem do Painel
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 10),
+                            
+                            // 💎 CARD PRINCIPAL: SALDO ESTELAR ATUAL (Imagem 2)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0B1424).withOpacity(0.6),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.15)),
+                              ),
+                              child: Column(
+                                children: [
+                                  const Text(
+                                    "SALDO ESTELAR ATUAL",
+                                    style: TextStyle(
+                                      color: Colors.white38,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    "R\$ ${saldoReal.toStringAsFixed(2)}",
+                                    style: const TextStyle(
+                                      color: Color(0xFF8CE8FF),
+                                      fontSize: 36,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: -0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  // Badge de variação/estabilidade do mockup
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF00E5FF).withOpacity(0.08),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.trending_up, color: Color(0xFF00E5FF), size: 14),
+                                        SizedBox(width: 6),
+                                        Text(
+                                          "Sistemas Operando em Estabilidade",
+                                          style: TextStyle(color: Color(0xFF00E5FF), fontSize: 11, fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                ],
+                              ),
+                            ),
+                            
+                            const SizedBox(height: 16),
+
+                            // 📉 CARD DE ENTRADAS (Imagem 2)
+                            _buildVerticalFluxCard(
+                              titulo: "ENTRADAS",
+                              valor: "R\$ ${(usuario?.ganhoFixo ?? 0.0 + (controle?.receitasExtras ?? 0.0)).toStringAsFixed(2)}",
+                              corLinha: const Color(0xFF00E5FF),
+                              icone: Icons.arrow_downward,
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // 📈 CARD DE SAÍDAS (Imagem 2)
+                            _buildVerticalFluxCard(
+                              titulo: "SAÍDAS",
+                              valor: "R\$ ${totalGasto.toStringAsFixed(2)}",
+                              corLinha: const Color(0xFFFF8C8C),
+                              icone: Icons.arrow_upward,
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // ⭕ CARD ORÇAMENTO DO MÊS COM GRÁFICO CIRCULAR (Imagem 2)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0B1424).withOpacity(0.6),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.white.withOpacity(0.04)),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text("ORÇAMENTO DO MÊS", style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                                  const Text("Ciclo Atual Ativo", style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 24),
+                                  Center(
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        SizedBox(
+                                          width: 120,
+                                          height: 120,
+                                          child: CircularProgressIndicator(
+                                            value: percentualConsumido,
+                                            strokeWidth: 10,
+                                            backgroundColor: Colors.white.withOpacity(0.05),
+                                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00E5FF)),
+                                          ),
+                                        ),
+                                        Column(
+                                          children: [
+                                            Text(
+                                              "${(percentualConsumido * 100).toStringAsFixed(0)}%",
+                                              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                                            ),
+                                            const Text("CONSUMIDO", style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
+                                          ],
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text("Restante Disponível", style: TextStyle(color: Colors.white54, fontSize: 13)),
+                                      Text(
+                                        "R\$ ${restanteOrcamento.toStringAsFixed(2)}",
+                                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold, fontFamily: 'monospace'),
+                                      )
+                                    ],
+                                  )
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                          ],
                         ),
                       ),
-
-                      const SizedBox(height: 4),
-
-                      Text(
-                        "${usuario!.cargo} em ${usuario!.empresa}",
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 16,
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      Text(
-                        getStatusFinanceiro(saldoReal),
-                        style: const TextStyle(
-                          color: Colors.white54,
-                          fontSize: 14,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // 💎 Painel Principal de Saldo (Estilo Glassmorphism do Astra)
-                      _cardPrincipal(
-                        titulo: "SALDO DINÂMICO REAL",
-                        valor: saldoReal.toStringAsFixed(2),
-                        cor: AstraTheme.secondary,
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // 📊 Grid de Métricas Financeiras
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _cardMini(
-                              "Receitas Extras",
-                              controle!.receitasExtras.toStringAsFixed(2),
-                              Colors.greenAccent,
-                              Icons.arrow_upward,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _cardMini(
-                              "Despesas Diárias",
-                              controle!.despesas.toStringAsFixed(2),
-                              Colors.redAccent,
-                              Icons.arrow_downward,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _cardMini(
-                              "Despesas Previstas",
-                              controle!.despesasPrevistas.toStringAsFixed(2),
-                              Colors.orangeAccent,
-                              Icons.calendar_today,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _cardMini(
-                              "Fatura de Parcelas",
-                              totalParcelasMes.toStringAsFixed(2),
-                              const Color(0xFFE040FB),
-                              Icons.credit_card,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const Spacer(),
-
-                      const Center(
-                        child: Text(
-                          "SISTEMA FINANCEIRO MARK I",
-                          style: TextStyle(
-                            color: Colors.white12,
-                            fontSize: 11,
-                            letterSpacing: 2,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      )
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
       ),
+      
+      // 🕹️ NAV BAR INFERIOR - FIEL AO MOCKUP DO STITCH (Imagem 2 / Imagem 3)
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF070D19),
+          border: Border(top: BorderSide(color: Colors.white.withOpacity(0.04), width: 1)),
+        ),
+        child: SafeArea(
+          child: SizedBox(
+            height: 64,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildBottomActionItem(index: 0, icone: Icons.home_filled, label: "Home"),
+                _buildBottomActionItem(index: 1, icone: Icons.history, label: "History"),
+                
+                // 🔥 Botão Central Flutuante Embutido (+)
+                GestureDetector(
+                  onTap: () {
+                    // Direciona para a abertura de Nova Operação (Imagem 1)
+                  },
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF00E5FF),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(color: Color(0xFF00E5FF), blurRadius: 12, offset: Offset(0, 2)),
+                      ],
+                    ),
+                    child: const Icon(Icons.add, color: Color(0xFF060B16), size: 28),
+                  ),
+                ),
+                
+                _buildBottomActionItem(index: 2, icone: Icons.bar_chart_outlined, label: "Stats"),
+                _buildBottomActionItem(index: 3, icone: Icons.settings_outlined, label: "Settings"),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _cardPrincipal({
-    required String titulo,
-    required String valor,
-    required Color cor,
-  }) {
+  // Widget auxiliar para montar os cards de Entradas/Saídas com a linha de vetor acentuada
+  Widget _buildVerticalFluxCard({required String titulo, required String valor, required Color corLinha, required IconData icone}) {
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.08), width: 1),
-      ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            titulo,
-            style: const TextStyle(
-              color: Colors.white38,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.5,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            "R\$ $valor",
-            style: TextStyle(
-              fontSize: 34,
-              color: cor,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _cardMini(String titulo, String valor, Color cor, IconData icone) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.02),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05), width: 1),
-      ),
       padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0B1424).withOpacity(0.6),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.04)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                titulo,
-                style: const TextStyle(color: Colors.white60, fontSize: 13),
-              ),
-              Icon(icone, color: cor.withOpacity(0.6), size: 16),
+              Text(titulo, style: const TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(color: corLinha.withOpacity(0.1), shape: BoxShape.circle),
+                child: Icon(icone, color: corLinha, size: 14),
+              )
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            "R\$ $valor",
-            style: TextStyle(
-              color: cor,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+          Text(valor, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
+          const SizedBox(height: 12),
+          // Linha de progresso constante/vetorial do Stitch
+          ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: 1.0,
+              minHeight: 3,
+              backgroundColor: Colors.transparent,
+              valueColor: AlwaysStoppedAnimation<Color>(corLinha.withOpacity(0.8)),
             ),
-          ),
+          )
         ],
+      ),
+    );
+  }
+
+  // Construtor dos botões da barra de navegação inferior
+  Widget _buildBottomActionItem({required int index, required IconData icone, required String label}) {
+    final bool ativo = _currentBottomIndex == index;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _currentBottomIndex = index;
+        });
+        // Vinculação futura para navegação indexada entre páginas
+      },
+      child: Container(
+        color: Colors.transparent,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icone, color: ativo ? const Color(0xFF00E5FF) : Colors.white38, size: 22),
+            const SizedBox(height: 4),
+            Text(label, style: TextStyle(color: ativo ? const Color(0xFF00E5FF) : Colors.white38, fontSize: 10, fontWeight: FontWeight.bold)),
+          ],
+        ),
       ),
     );
   }

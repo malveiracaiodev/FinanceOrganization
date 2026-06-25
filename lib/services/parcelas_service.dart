@@ -134,3 +134,24 @@ class ParcelasService {
     _cache = null;
   }
 }
+// Adicione estes métodos dentro da sua classe ParcelasService:
+
+  /// ⚡ Adiantar Parcela (Amortização)
+  static Future<void> adiantarContrato(String id) async {
+    final lista = await carregar();
+    final index = lista.indexWhere((p) => p.id == id);
+    if (index != -1) {
+      lista[index] = lista[index].adiantar();
+      await salvar(lista);
+    }
+  }
+
+  /// ⏳ Atrasar Parcela (Postergação)
+  static Future<void> atrasarContrato(String id) async {
+    final lista = await carregar();
+    final index = lista.indexWhere((p) => p.id == id);
+    if (index != -1) {
+      lista[index] = lista[index].atrasar();
+      await salvar(lista);
+    }
+  }

@@ -1,5 +1,5 @@
 class Parcela {
-  final String id; // ID necessário para sabermos qual parcela deletar/editar
+  final String id;
   final String descricao;
   final double valorTotal;
   final double valorParcela;
@@ -17,28 +17,35 @@ class Parcela {
     this.ativa = true,
   });
 
-  /// 💰 valor que impacta o mês atual
   double get valorDoMes => ativa ? valorParcela : 0;
+  bool get finalizada => parcelaAtual > totalParcelas;
 
-  /// ✔ já terminou todas as parcelas
-  bool get finalizada => parcelaAtual >= totalParcelas;
-
-  /// 🔄 próxima parcela (imutável)
-  Parcela avancarParcela() {
+  /// ⏩ Adiantar uma parcela (pula o contador atual)
+  Parcela adiantar() {
     final proxima = parcelaAtual + 1;
-
-    return Parcela(
-      id: id,
-      descricao: descricao,
-      valorTotal: valorTotal,
-      valorParcela: valorParcela,
-      totalParcelas: totalParcelas,
+    return copyWith(
       parcelaAtual: proxima,
       ativa: proxima <= totalParcelas,
     );
   }
 
-  /// 🔁 copia com alterações (Padrão do seu projeto)
+  /// ⏪ Atrasar uma parcela (retrocede ou estende o contrato)
+  Parcela atrasar() {
+    // Se ainda não começou, não faz nada
+    if (parcelaAtual <= 1) return this;
+    return copyWith(
+      parcelaAtual: parcelaAtual - 1,
+    );
+  }
+
+  Parcela avancarParcela() {
+    final proxima = parcelaAtual + 1;
+    return copyWith(
+      parcelaAtual: proxima,
+      ativa: proxima <= totalParcelas,
+    );
+  }
+
   Parcela copyWith({
     String? id,
     String? descricao,
@@ -59,7 +66,6 @@ class Parcela {
     );
   }
 
-  /// 💾 serialização segura
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -72,7 +78,6 @@ class Parcela {
     };
   }
 
-  /// 🔐 desserialização robusta
   factory Parcela.fromMap(Map<String, dynamic> map) {
     return Parcela(
       id: (map['id'] ?? '') as String,
@@ -85,11 +90,9 @@ class Parcela {
     );
   }
 
-  // 🔄 Aliases para sincronizar com os métodos nativos do SharedPreferences/JSON
   Map<String, dynamic> toJson() => toMap();
   factory Parcela.fromJson(Map<String, dynamic> json) => Parcela.fromMap(json);
 
-  /// 🧠 parser seguro
   static double _parseDouble(dynamic value) {
     if (value == null) return 0;
     if (value is double) return value;

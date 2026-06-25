@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-
-import '../core/theme/app_theme.dart';
 import '../models/parcela.dart';
 import '../services/parcelas_service.dart';
 import '../widgets/app_drawer.dart';
@@ -15,7 +13,6 @@ class ParcelasPage extends StatefulWidget {
 
 class _ParcelasPageState extends State<ParcelasPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  
   List<Parcela> parcelas = [];
   bool carregando = true;
 
@@ -29,195 +26,166 @@ class _ParcelasPageState extends State<ParcelasPage> {
     final dados = await ParcelasService.carregarParcelas();
     if (!mounted) return;
     setState(() {
-      parcelas = dados;
+      parcelas = dados.where((p) => !p.finalizada).toList();
       carregando = false;
     });
   }
 
-  Future<void> excluir(String id) async {
-    await ParcelasService.deletarParcelas(id); // Alinhado com o service interno
+  Future<void> ajustarTempo(String id, bool adiantar) async {
+    if (adiantar) {
+      await ParcelasService.adiantarContrato(id);
+    } else {
+      await ParcelasService.atrasarContrato(id);
+    }
     await carregar();
   }
 
-  Future<void> abrirFormulario() async {
-    final descController = TextEditingController();
-    final totalController = TextEditingController();
-    final qtdController = TextEditingController();
-
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0A0F1E),
-        title: const Text(
-          "NOVO AGENDAMENTO DE PARCELA",
-          style: TextStyle(color: AstraTheme.secondary, fontSize: 13, letterSpacing: 1),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: descController,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: "Descrição (Ex: Notebook)",
-                labelStyle: TextStyle(color: Colors.white54, fontSize: 13),
-              ),
-            ),
-            TextField(
-              controller: totalController,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: "Valor Total (R\$)",
-                labelStyle: TextStyle(color: Colors.white54, fontSize: 13),
-              ),
-            ),
-            TextField(
-              controller: qtdController,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: "Quantidade de Parcelas",
-                labelStyle: TextStyle(color: Colors.white54, fontSize: 13),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text("CANCELAR", style: TextStyle(color: Colors.white38)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text("AGENDAR"),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmar != true) return;
-
-    final vTotal = double.tryParse(totalController.text.replaceAll(',', '.')) ?? 0;
-    final totalP = int.tryParse(qtdController.text) ?? 1;
-
-    if (descController.text.isEmpty || vTotal <= 0) return;
-
-    final nova = Parcela(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      descricao: descController.text,
-      valorTotal: vTotal,
-      valorParcela: vTotal / totalP, // Calcula automaticamente o valor da parcela mensal
-      totalParcelas: totalP,
-      parcelaAtual: 1,
-      ativa: true,
-    );
-
-    await ParcelasService.salvarParcelas(nova); // Alinhado com o seu service
+  Future<void> excluir(String id) async {
+    await ParcelasService.deletarParcelas(id);
     await carregar();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       key: _scaffoldKey,
       drawer: const AppDrawer(),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AstraTheme.primary,
-        onPressed: abrirFormulario,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+      backgroundColor: const Color(0xFF060B16),
       body: FundoCosmico(
         child: SafeArea(
-          child: carregando
-              ? Center(child: CircularProgressIndicator(color: theme.primaryColor))
-              : Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Barra de controle superior
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.menu, color: Colors.white, size: 28),
-                            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                          ),
-                          const Text(
-                            "CRONOGRAMA DE PARCELAS",
-                            style: TextStyle(
-                              color: Colors.white54,
-                              fontSize: 12,
-                              letterSpacing: 2,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top Bar estilo Comando Estelar
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.menu, color: Colors.white, size: 26),
+                      onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                    ),
+                    const Text(
+                      "FINANÇAS MARK I",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.5,
                       ),
-                      const SizedBox(height: 20),
+                    ),
+                    const SizedBox(width: 40),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  "Parcelamentos",
+                  style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                ),
+                const Text(
+                  "Compromissos de longo prazo sob monitoramento.",
+                  style: TextStyle(color: Colors.white54, fontSize: 13),
+                ),
+                const SizedBox(height: 24),
 
-                      // Lista Operacional de Parcelados
-                      Expanded(
-                        child: parcelas.isEmpty
-                            ? const Center(
-                                child: Text(
-                                  "Nenhum parcelamento ativo no radar.",
-                                  style: TextStyle(color: Colors.white38),
-                                ),
-                              )
-                            : ListView.builder(
-                                itemCount: parcelas.length,
-                                physics: const BouncingScrollPhysics(),
-                                itemBuilder: (context, index) {
-                                  final p = parcelas[index];
+                Expanded(
+                  child: carregando
+                      ? const Center(child: CircularProgressIndicator(color: Color(0xFF00E5FF)))
+                      : parcelas.isEmpty
+                          ? const Center(
+                              child: Text(
+                                "Nenhum vetor de parcelamento ativo no radar.",
+                                style: TextStyle(color: Colors.white38),
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: parcelas.length,
+                              physics: const BouncingScrollPhysics(),
+                              itemBuilder: (context, index) {
+                                final p = parcelas[index];
+                                final double progresso = p.totalParcelas > 0 
+                                    ? (p.parcelaAtual - 1) / p.totalParcelas 
+                                    : 0.0;
 
-                                  return Container(
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.02),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(color: Colors.white.withOpacity(0.05)),
-                                    ),
-                                    child: ListTile(
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      title: Row(
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0B1220).withOpacity(0.8),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.15)),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
                                           Expanded(
                                             child: Text(
                                               p.descricao,
                                               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                                              overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
                                           Text(
-                                            "R\$ ${p.valorParcela.toStringAsFixed(2)}/mês",
-                                            style: const TextStyle(color: AstraTheme.secondary, fontWeight: FontWeight.bold, fontSize: 14),
+                                            "${p.parcelaAtual.toString().padLeft(2, '0')}/${p.totalParcelas.toString().padLeft(2, '0')}",
+                                            style: const TextStyle(color: Colors.white70, fontSize: 13, fontFamily: 'monospace'),
                                           ),
                                         ],
                                       ),
-                                      subtitle: Padding(
-                                        padding: const EdgeInsets.only(top: 6.0),
-                                        child: Text(
-                                          "Total: R\$ ${p.valorTotal.toStringAsFixed(2)} | Progresso: ${p.parcelaAtual}x de ${p.totalParcelas}x",
-                                          style: const TextStyle(color: Colors.white38, fontSize: 12),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        "Impacto mensal: R\$ ${p.valorParcela.toStringAsFixed(2)}",
+                                        style: TextStyle(color: const Color(0xFF00E5FF).withOpacity(0.8), fontSize: 12),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      
+                                      // Barra Neon Gradiente do Stitch
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(4),
+                                        child: LinearProgressIndicator(
+                                          value: progresso.clamp(0.0, 1.0),
+                                          backgroundColor: Colors.white.withOpacity(0.05),
+                                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00E5FF)),
+                                          minHeight: 6,
                                         ),
                                       ),
-                                      trailing: IconButton(
-                                        icon: const Icon(Icons.delete_sweep, color: Colors.redAccent, size: 24),
-                                        onPressed: () => excluir(p.id),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-                    ],
-                  ),
+                                      const SizedBox(height: 16),
+                                      
+                                      // Painel de Operações Avançadas de Tempo
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              IconButton(
+                                                tooltip: "Atrasar/Postergar Parcela",
+                                                icon: const Icon(Icons.history, color: Colors.orangeAccent, size: 20),
+                                                onPressed: () => ajustarTempo(p.id, false),
+                                              ),
+                                              IconButton(
+                                                tooltip: "Adiantar/Amortizar Parcela",
+                                                icon: const Icon(Icons.flash_on, color: Color(0xFF00E5FF), size: 20),
+                                                onPressed: () => ajustarTempo(p.id, true),
+                                              ),
+                                            ],
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                                            onPressed: () => excluir(p.id),
+                                          ),
+                                        ],
+                                      )
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                 ),
+              ],
+            ),
+          ),
         ),
       ),
     );
