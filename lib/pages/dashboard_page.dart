@@ -94,7 +94,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.notifications_none_outlined, color: Colors.white80, size: 24),
+                            const Icon(Icons.notifications_none_outlined, color: Colors.white70, size: 24),
                             onPressed: () {},
                           ),
                         ],
@@ -151,7 +151,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                     child: const Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(Icons.shield_out_lined, color: AstraTheme.primary, size: 14),
+                                        Icon(Icons.shield_outlined, color: AstraTheme.primary, size: 14),
                                         SizedBox(width: 6),
                                         Text(
                                           "Ambiente Operacional Seguro",
