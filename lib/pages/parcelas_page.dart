@@ -5,7 +5,9 @@ import '../widgets/app_drawer.dart';
 import '../widgets/fundo_cosmico.dart';
 
 class ParcelasPage extends StatefulWidget {
-  const ParcelasPage({super.key});
+  final Function(int)? onSelectTab; // 🔥 Callback para sincronizar abas do painel principal
+
+  const ParcelasPage({super.key, this.onSelectTab});
 
   @override
   State<ParcelasPage> createState() => _ParcelasPageState();
@@ -49,7 +51,7 @@ class _ParcelasPageState extends State<ParcelasPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      drawer: const AppDrawer(),
+      drawer: AppDrawer(onSelectTab: widget.onSelectTab), // 🔥 Menu integrado
       backgroundColor: const Color(0xFF060B16),
       body: FundoCosmico(
         child: SafeArea(
@@ -58,7 +60,7 @@ class _ParcelasPageState extends State<ParcelasPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top Bar estilo Comando Estelar
+                // Barra Superior Corporativa
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -67,12 +69,12 @@ class _ParcelasPageState extends State<ParcelasPage> {
                       onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                     ),
                     const Text(
-                      "FINANÇAS MARK I",
+                      "GERENCIAMENTO DE CONTRATOS",
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
+                        color: Colors.white54,
+                        fontSize: 12,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: 1.5,
+                        letterSpacing: 2,
                       ),
                     ),
                     const SizedBox(width: 40),
@@ -84,7 +86,7 @@ class _ParcelasPageState extends State<ParcelasPage> {
                   style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
                 ),
                 const Text(
-                  "Compromissos de longo prazo sob monitoramento.",
+                  "Compromissos de longo prazo sob auditoria.",
                   style: TextStyle(color: Colors.white54, fontSize: 13),
                 ),
                 const SizedBox(height: 24),
@@ -95,7 +97,7 @@ class _ParcelasPageState extends State<ParcelasPage> {
                       : parcelas.isEmpty
                           ? const Center(
                               child: Text(
-                                "Nenhum vetor de parcelamento ativo no radar.",
+                                "Nenhum parcelamento ativo em aberto.",
                                 style: TextStyle(color: Colors.white38),
                               ),
                             )
@@ -105,16 +107,16 @@ class _ParcelasPageState extends State<ParcelasPage> {
                               itemBuilder: (context, index) {
                                 final p = parcelas[index];
                                 final double progresso = p.totalParcelas > 0 
-                                    ? (p.parcelaAtual - 1) / p.totalParcelas 
+                                    ? p.parcelaAtual / p.totalParcelas 
                                     : 0.0;
 
                                 return Container(
                                   margin: const EdgeInsets.only(bottom: 16),
                                   padding: const EdgeInsets.all(20),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF0B1220).withOpacity(0.8),
+                                    color: const Color(0xFF0B1424).withOpacity(0.6),
                                     borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.15)),
+                                    border: Border.all(color: Colors.white.withOpacity(0.04)),
                                   ),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,11 +139,11 @@ class _ParcelasPageState extends State<ParcelasPage> {
                                       const SizedBox(height: 4),
                                       Text(
                                         "Impacto mensal: R\$ ${p.valorParcela.toStringAsFixed(2)}",
-                                        style: TextStyle(color: const Color(0xFF00E5FF).withOpacity(0.8), fontSize: 12),
+                                        style: const TextStyle(color: Color(0xFF00E5FF), fontSize: 12),
                                       ),
                                       const SizedBox(height: 16),
                                       
-                                      // Barra Neon Gradiente do Stitch
+                                      // Barra Neon de Progresso
                                       ClipRRect(
                                         borderRadius: BorderRadius.circular(4),
                                         child: LinearProgressIndicator(
@@ -151,27 +153,28 @@ class _ParcelasPageState extends State<ParcelasPage> {
                                           minHeight: 6,
                                         ),
                                       ),
-                                      const SizedBox(height: 16),
+                                      const SizedBox(height: 12),
                                       
-                                      // Painel de Operações Avançadas de Tempo
+                                      // Painel de Operações da Parcela
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
                                           Row(
                                             children: [
                                               IconButton(
-                                                tooltip: "Atrasar/Postergar Parcela",
-                                                icon: const Icon(Icons.history, color: Colors.orangeAccent, size: 20),
+                                                tooltip: "Retroceder Parcela",
+                                                icon: const Icon(Icons.remove_circle_outline, color: Colors.orangeAccent, size: 20),
                                                 onPressed: () => ajustarTempo(p.id, false),
                                               ),
                                               IconButton(
-                                                tooltip: "Adiantar/Amortizar Parcela",
-                                                icon: const Icon(Icons.flash_on, color: Color(0xFF00E5FF), size: 20),
+                                                tooltip: "Avançar/Quitar Parcela",
+                                                icon: const Icon(Icons.add_circle_outline, color: Color(0xFF00E5FF), size: 20),
                                                 onPressed: () => ajustarTempo(p.id, true),
                                               ),
                                             ],
                                           ),
                                           IconButton(
+                                            tooltip: "Remover Parcelamento",
                                             icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
                                             onPressed: () => excluir(p.id),
                                           ),

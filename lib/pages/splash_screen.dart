@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_theme.dart';
 import '../services/preferences_service.dart';
 import '../services/controle_service.dart';
-import '../services/parcelas_service.dart'; // Importado para lidar com as parcelas na virada
+import '../services/parcelas_service.dart'; 
 
 import 'dashboard_page.dart';
 import 'cadastro_page.dart';
-import '../widgets/fundo_cosmico.dart'; // Ajustado o caminho do import
+import '../widgets/fundo_cosmico.dart'; 
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -32,8 +33,8 @@ class _SplashScreenState extends State<SplashScreen>
     )..repeat(reverse: true);
 
     _animation = Tween<double>(
-      begin: 0.85,
-      end: 1.15,
+      begin: 0.90,
+      end: 1.10,
     ).animate(
       CurvedAnimation(
         parent: _controller,
@@ -50,15 +51,15 @@ class _SplashScreenState extends State<SplashScreen>
       final user = await PreferencesService.carregarUsuario();
       await ControleService.carregarControle();
 
-      // 2. 🔥 LÓGICA DO DIA 1º (Verificação de ciclo mensal)
+      // 2. LÓGICA DE TRANSIÇÃO DE CICLO MENSAL
       if (user != null) {
-        // Verifica se o mês mudou desde a última execução salva
+        // TODO: Implementar a verificação real se o mês mudou no PreferencesService
         final bool mesMudou = false; 
         
         if (mesMudou) {
           // Se o mês mudou, roda o processamento controlado das parcelas
           await ParcelasService.processarMes();
-          // Recarrega o controle para garantir que a UI pegue os valores novos abastados
+          // Recarrega o controle para garantir que a UI pegue os novos valores consolidados
           await ControleService.carregarControle();
         }
       }
@@ -67,14 +68,19 @@ class _SplashScreenState extends State<SplashScreen>
 
       setState(() => _loading = false);
 
-      // 3. Roteamento orbital baseado na existência do usuário
+      // Pequena pausa com os sistemas prontos para suavizar a transição
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (!mounted) return;
+
+      // 3. Roteamento baseado na existência do perfil de usuário
       if (user == null) {
         _goToCadastro();
       } else {
         _goToDashboard();
       }
     } catch (e) {
-      debugPrint("Splash error: $e");
+      debugPrint("Erro na inicialização do app: $e");
 
       if (!mounted) return;
       _goToCadastro();
@@ -108,7 +114,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FundoCosmico( // Removido o alias 'fundo.' para ficar limpo
+      body: FundoCosmico( 
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -116,31 +122,32 @@ class _SplashScreenState extends State<SplashScreen>
               ScaleTransition(
                 scale: _animation,
                 child: Icon(
-                  Icons.rocket_launch, // Usando Icon temporário caso o asset dê alguma falha de path
-                  size: 100,
-                  color: Theme.of(context).primaryColor,
+                  Icons.donut_large_rounded, // Ícone moderno e limpo, alinhado ao nicho finanças/gráficos
+                  size: 80,
+                  color: AstraTheme.primary,
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 28),
 
               const Text(
-                "FinanceControl Mark I",
+                "ASTRACONTROL",
                 style: TextStyle(
-                  color: Color(0xFF00D4FF), // Seu ciano elétrico do tema
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.5,
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 4,
                 ),
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
 
               Text(
-                _loading ? "Inicializando sistemas de órbita..." : "Sistemas prontos.",
+                _loading ? "Carregando dados financeiros..." : "Sistemas prontos.",
                 style: const TextStyle(
                   color: Colors.white54,
-                  fontSize: 14,
+                  fontSize: 13,
+                  letterSpacing: 0.5,
                 ),
               ),
             ],

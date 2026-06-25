@@ -5,12 +5,14 @@ import '../models/controle_financeiro.dart';
 import '../models/usuario.dart';
 import '../services/controle_service.dart';
 import '../services/preferences_service.dart';
-import '../services/parcelas_service.dart'; // 🔥 Motor de parcelas conectado
+import '../services/parcelas_service.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/fundo_cosmico.dart';
 
 class ControlePage extends StatefulWidget {
-  const ControlePage({super.key});
+  final Function(int)? onSelectTab; // 🔥 Adicionado callback para sincronia perfeita com as abas
+
+  const ControlePage({super.key, this.onSelectTab});
 
   @override
   State<ControlePage> createState() => _ControlePageState();
@@ -86,11 +88,11 @@ class _ControlePageState extends State<ControlePage> {
         backgroundColor: const Color(0xFF0A0F1E),
         title: const Text(
           'ENCERRAR CICLO MENSAL',
-          style: TextStyle(color: AstraTheme.secondary, fontSize: 14, letterSpacing: 1),
+          style: TextStyle(color: AstraTheme.secondary, fontSize: 14, letterSpacing: 1, fontWeight: FontWeight.bold),
         ),
         content: const Text(
-          'Confirmar o encerramento da órbita atual? Os dados correntes serão compilados no Histórico e o painel redefinido.',
-          style: TextStyle(color: Colors.white70),
+          'Confirmar o encerramento do ciclo atual? Os dados correntes serão compilados no histórico gerencial e o painel redefinido para o próximo mês.',
+          style: TextStyle(color: Colors.white70, fontSize: 14),
         ),
         actions: [
           TextButton(
@@ -100,7 +102,7 @@ class _ControlePageState extends State<ControlePage> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: const Text('CONFIRMAR FECHAMENTO'),
+            child: const Text('CONFIRMAR FECHAMENTO', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -128,7 +130,7 @@ class _ControlePageState extends State<ControlePage> {
 
     return Scaffold(
       key: _scaffoldKey,
-      drawer: const AppDrawer(),
+      drawer: AppDrawer(onSelectTab: widget.onSelectTab), // 🔥 Injetado controle síncrono no Drawer
       body: FundoCosmico(
         child: SafeArea(
           child: carregando
@@ -146,7 +148,7 @@ class _ControlePageState extends State<ControlePage> {
                           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                         ),
                         const Text(
-                          "LANÇAMENTOS OPERACIONAIS",
+                          "LANÇAMENTOS DE FLUXO",
                           style: TextStyle(
                             color: Colors.white54,
                             fontSize: 12,
@@ -170,7 +172,7 @@ class _ControlePageState extends State<ControlePage> {
                       child: Column(
                         children: [
                           const Text(
-                            'SALDO DINÂMICO REAL',
+                            'SALDO ATUAL REAL',
                             style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.5),
                           ),
                           const SizedBox(height: 10),
@@ -199,7 +201,7 @@ class _ControlePageState extends State<ControlePage> {
                       padding: const EdgeInsets.all(18),
                       child: Column(
                         children: [
-                          _linhaResumo('Salário Base', usuario!.ganhoFixo, Colors.cyanAccent),
+                          _linhaResumo('Renda Base (Salário)', usuario!.ganhoFixo, Colors.cyanAccent),
                           _linhaResumo('Receitas Extras', controle!.receitasExtras, Colors.greenAccent),
                           _linhaResumo('Despesas Diárias', controle!.despesas, Colors.redAccent),
                           _linhaResumo('Despesas Previstas', controle!.despesasPrevistas, Colors.orangeAccent),
@@ -210,11 +212,11 @@ class _ControlePageState extends State<ControlePage> {
 
                     const SizedBox(height: 28),
 
-                    // 🛠️ Módulos de Entrada de Dados
+                    // 🛠️ Módulos de Entrada de Dados Profissionalizados
                     _campoFinanceiro(
                       controller: receitaController,
                       titulo: 'RECEITA EXTRA',
-                      botao: 'INJETAR CRÉDITO',
+                      botao: 'INJETAR',
                       onPressed: adicionarReceita,
                       corIcone: Colors.greenAccent,
                       icone: Icons.add_chart,
@@ -225,7 +227,7 @@ class _ControlePageState extends State<ControlePage> {
                     _campoFinanceiro(
                       controller: despesaController,
                       titulo: 'REGISTRAR DESPESA',
-                      botao: 'DEBITAR GASTO',
+                      botao: 'DEBITAR',
                       onPressed: adicionarDespesa,
                       corIcone: Colors.redAccent,
                       icone: Icons.money_off,
@@ -236,7 +238,7 @@ class _ControlePageState extends State<ControlePage> {
                     _campoFinanceiro(
                       controller: previstoController,
                       titulo: 'PROJETAR DESPESA PREVISTA',
-                      botao: 'ADICIONAR PREVISÃO',
+                      botao: 'PROJETAR',
                       onPressed: adicionarPrevisto,
                       corIcone: Colors.orangeAccent,
                       icone: Icons.analytics,
@@ -244,7 +246,7 @@ class _ControlePageState extends State<ControlePage> {
 
                     const SizedBox(height: 32),
 
-                    // 🚨 Botão de Fechamento de Mês
+                    // 🚨 Botão de Fechamento de Mês Corporativo
                     SizedBox(
                       height: 50,
                       child: ElevatedButton.icon(
@@ -256,7 +258,7 @@ class _ControlePageState extends State<ControlePage> {
                         ),
                         icon: const Icon(Icons.archive, color: Colors.redAccent, size: 20),
                         label: const Text(
-                          'FINALIZAR E ARQUIVAR MÊS',
+                          'CONCLUIR E FECHAR MÊS CORRENTE',
                           style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, letterSpacing: 1),
                         ),
                       ),
@@ -327,14 +329,7 @@ class _ControlePageState extends State<ControlePage> {
                       prefixText: 'R\$ ',
                       prefixStyle: TextStyle(color: corIcone, fontWeight: FontWeight.bold),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AstraTheme.primary),
-                      ),
+                      // Removemos as bordas inline e deixamos herdar do inputDecorationTheme do AstraTheme!
                     ),
                   ),
                 ),
@@ -346,7 +341,7 @@ class _ControlePageState extends State<ControlePage> {
                   onPressed: onPressed,
                   style: ElevatedButton.styleFrom(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                   ),
                   child: Text(botao, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 ),

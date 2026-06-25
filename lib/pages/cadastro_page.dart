@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/usuario.dart';
 import '../services/preferences_service.dart';
 import '../widgets/fundo_cosmico.dart';
-import 'dashboard_page.dart';
+import 'navegacao_page.dart'; // 🔥 Ajustado para o hub centralizado de abas
 
 class CadastroPage extends StatefulWidget {
   const CadastroPage({super.key});
@@ -25,7 +25,7 @@ class _CadastroPageState extends State<CadastroPage> {
     if (nomeController.text.trim().isEmpty ||
         sobrenomeController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Por favor, preencha nome e sobrenome do Comandante.")),
+        const SnackBar(content: Text("Por favor, preencha o nome e sobrenome do usuário.")),
       );
       return;
     }
@@ -36,22 +36,21 @@ class _CadastroPageState extends State<CadastroPage> {
 
     if (ganho == null || ganho < 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Informe um ganho mensal base válido.")),
+        const SnackBar(content: Text("Informe uma renda mensal base válida.")),
       );
       return;
     }
 
     setState(() => salvando = true);
 
-    // 🔥 Integração com o novo construtor da Model Usuario
     final usuario = Usuario(
       nome: nomeController.text.trim(),
       sobrenome: sobrenomeController.text.trim(),
       empresa: empresaController.text.trim(),
       cargo: cargoController.text.trim(),
       ganhoFixo: ganho,
-      saldoAtual: ganho, // Mapeamento inicial: Seu primeiro saldo é seu ganho base
-      ultimoMesVerificado: DateTime.now().month, // Registra o mês de entrada do sistema
+      saldoAtual: ganho, // Mapeamento inicial equilibrado
+      ultimoMesVerificado: DateTime.now().month,
     );
 
     await PreferencesService.salvarUsuario(usuario);
@@ -59,15 +58,16 @@ class _CadastroPageState extends State<CadastroPage> {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Sistemas Mark I inicializados com sucesso!")),
+      const SnackBar(content: Text("Perfil financeiro configurado com sucesso!")),
     );
 
     await Future.delayed(const Duration(milliseconds: 500));
 
     if (!mounted) return;
 
+    // 🔥 Correção crucial de rota: Entra no hub com a barra de navegação ativa
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const DashboardPage()),
+      MaterialPageRoute(builder: (_) => const NavegacaoPage()),
     );
   }
 
@@ -85,10 +85,9 @@ class _CadastroPageState extends State<CadastroPage> {
               children: [
                 const SizedBox(height: 30),
                 
-                // 🌌 Cabeçalho Estilizado Stitch
                 Center(
                   child: Icon(
-                    Icons.rocket_launch,
+                    Icons.analytics_outlined, // Ícone mais corporativo/financeiro
                     size: 60,
                     color: theme.primaryColor,
                   ),
@@ -106,20 +105,20 @@ class _CadastroPageState extends State<CadastroPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "Alistamento de Tripulação",
+                  "Configuração de Conta",
                   textAlign: TextAlign.center,
                   style: theme.textTheme.headlineMedium?.copyWith(color: Colors.white),
                 ),
                 const SizedBox(height: 30),
 
-                // 📝 Formulário Espacial
-                _campo("Nome do Comandante", nomeController, icon: Icons.person_outline),
+                // 📝 Formulário Profissionalizado
+                _campo("Nome do Usuário", nomeController, icon: Icons.person_outline),
                 _campo("Sobrenome", sobrenomeController, icon: Icons.badge_outlined),
-                _campo("Frota / Empresa", empresaController, icon: Icons.business_outlined),
-                _campo("Posto / Cargo", cargoController, icon: Icons.work_outline),
+                _campo("Empresa / Organização", empresaController, icon: Icons.business_outlined),
+                _campo("Cargo / Função", cargoController, icon: Icons.work_outline),
 
                 _campo(
-                  "Créditos Mensais Base (Salário)",
+                  "Renda Mensal Base (Salário)",
                   ganhoController,
                   teclado: TextInputType.number,
                   prefixo: "R\$ ",
@@ -170,21 +169,9 @@ class _CadastroPageState extends State<CadastroPage> {
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: Colors.white60, fontSize: 14),
           prefixText: prefixo,
-          prefixStyle: const TextStyle(color: Color(0xFF00D4FF), fontWeight: FontWeight.bold),
-          prefixIcon: Icon(icon, color: Colors.white38, size: 20),
-          filled: true,
-          fillColor: Colors.white.withOpacity(0.02),
-          // Customização de bordas futuristas baseadas no seu AstraTheme
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: Colors.white.withOpacity(0.08), width: 1),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Color(0xFF00D4FF), width: 1.5),
-          ),
+          prefixIcon: Icon(icon, size: 20),
+          // Herda inteligentemente as bordas e preenchimento que calibramos no AstraTheme!
         ),
       ),
     );

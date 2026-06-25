@@ -5,7 +5,7 @@ class Usuario {
   final String cargo;
   final double ganhoFixo;
   
-  // 🌌 NOVOS CAMPOS: Gerenciamento do ciclo da Mark I
+  // 🌌 CAMPOS DE SESSÃO: Gerenciamento do ciclo da Mark I
   final double saldoAtual;
   final int ultimoMesVerificado;
 
@@ -19,10 +19,10 @@ class Usuario {
     required this.ultimoMesVerificado,
   });
 
-  /// 👤 nome completo (UI helper)
+  /// 👤 Nome completo do Comandante da Missão
   String get nomeCompleto => '$nome $sobrenome';
 
-  /// 🔁 copia com alterações (IMPORTANTE para evolução)
+  /// 🔁 Cópia com alterações (Crucial para atualização de saldo pós-missão)
   Usuario copyWith({
     String? nome,
     String? sobrenome,
@@ -43,7 +43,7 @@ class Usuario {
     );
   }
 
-  /// 💾 serialização segura
+  /// 💾 Serialização para persistência orbital
   Map<String, dynamic> toMap() {
     return {
       'nome': nome,
@@ -56,7 +56,7 @@ class Usuario {
     };
   }
 
-  /// 🔐 desserialização robusta
+  /// 🔐 Desserialização robusta anti-crash
   factory Usuario.fromMap(Map<String, dynamic> map) {
     return Usuario(
       nome: (map['nome'] ?? '') as String,
@@ -64,18 +64,28 @@ class Usuario {
       empresa: (map['empresa'] ?? '') as String,
       cargo: (map['cargo'] ?? '') as String,
       ganhoFixo: _parseDouble(map['ganhoFixo']),
-      saldoAtual: _parseDouble(map['saldoAtual'] ?? map['ganhoFixo']), // Se o saldo for nulo no primeiro login, vira o ganho base
-      ultimoMesVerificado: (map['ultimoMesVerificado'] ?? DateTime.now().month) as int,
+      saldoAtual: _parseDouble(map['saldoAtual'] ?? map['ganhoFixo']), // Fallback perfeito para o primeiro login
+      ultimoMesVerificado: _parseInt(map['ultimoMesVerificado'], padrao: DateTime.now().month),
     );
   }
 
-  /// 🧠 parser seguro (evita crash silencioso)
+  // 🔄 Aliases de compatibilidade adicionados para sincronizar perfeitamente com os Services
+  Map<String, dynamic> toJson() => toMap();
+  factory Usuario.fromJson(Map<String, dynamic> json) => Usuario.fromMap(json);
+
+  /// 🧠 Parser seguro para decimais (Evita crash silencioso)
   static double _parseDouble(dynamic value) {
     if (value == null) return 0;
-
     if (value is double) return value;
     if (value is int) return value.toDouble();
-
     return double.tryParse(value.toString()) ?? 0;
+  }
+
+  /// 🧠 Parser seguro para inteiros
+  static int _parseInt(dynamic value, {int padrao = 1}) {
+    if (value == null) return padrao;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    return int.tryParse(value.toString()) ?? padrao;
   }
 }

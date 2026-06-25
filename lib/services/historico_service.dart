@@ -5,7 +5,6 @@ import '../models/historico_mensal.dart';
 class HistoricoService {
   static const String _key = 'historico_financeiro_key';
 
-  // 📂 Carrega a lista completa de históricos salvos
   static Future<List<HistoricoMensal>> carregar() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getString(_key);
@@ -16,21 +15,18 @@ class HistoricoService {
     return jsonList.map((item) => HistoricoMensal.fromJson(item)).toList();
   }
 
-  // 💾 Salva a lista completa de volta no SharedPreferences
   static Future<void> salvarLista(List<HistoricoMensal> lista) async {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = jsonEncode(lista.map((item) => item.toJson()).toList());
     await prefs.setString(_key, jsonString);
   }
 
-  // ➕ Adiciona um novo fechamento ao topo do histórico
   static Future<void> adicionar(HistoricoMensal novo) async {
     final lista = await carregar();
-    lista.insert(0, novo); // Adiciona o mês mais recente no topo da lista
+    lista.insert(0, novo); 
     await salvarLista(lista);
   }
 
-  // 🔥 Método crucial de sincronização para a HistoricoPage editar via índice
   static Future<void> atualizarMes(int index, HistoricoMensal atualizado) async {
     final lista = await carregar();
     if (index >= 0 && index < lista.length) {

@@ -6,7 +6,7 @@ import '../widgets/fundo_cosmico.dart';
 import '../services/preferences_service.dart';
 
 import 'cadastro_page.dart';
-import 'dashboard_page.dart';
+import 'navegacao_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -36,11 +36,11 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _entrar() {
+void _entrar() {
     if (_usuarioExiste) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const DashboardPage()),
+        MaterialPageRoute(builder: (_) => const NavegacaoPage()), // 🔥 Mudado aqui!
       );
     } else {
       Navigator.push(

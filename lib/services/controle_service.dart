@@ -31,7 +31,6 @@ class ControleService {
 
   static Future<void> adicionarReceita(double valor) async {
     final controle = await carregarControle();
-    // 🧠 Usando copyWith porque as propriedades são imutáveis (final)
     final atualizado = controle.copyWith(receitasExtras: controle.receitasExtras + valor);
     await salvarControle(atualizado);
   }
@@ -48,12 +47,12 @@ class ControleService {
     await salvarControle(atualizado);
   }
 
-  // 🧭 Método para sanar a quebra da SplashScreen se necessário
   static Future<bool> verificarEAtualizarViradaMes() async {
+    // Implementação pendente para automação de ciclo via SharedPreferences se necessário
     return false; 
   }
 
-  static Future<void> encerrarMes() async {
+  static Future<void> encerarMes() async {
     final controle = await carregarControle();
     final usuario = await PreferencesService.carregarUsuario();
     final totalParcelasMes = await ParcelasService.calcularTotalMes();

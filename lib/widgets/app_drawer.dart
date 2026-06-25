@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/theme/app_theme.dart';
-import '../pages/dashboard_page.dart';
-import '../pages/historico_page.dart';
-import '../pages/parcelas_page.dart'; // 🔥 Nova aba de parcelamentos
 
 class AppDrawer extends StatelessWidget {
-  const AppDrawer({super.key});
+  // 🔥 Callback que avisa o Hub de abas qual índice deve ser aberto
+  final Function(int)? onSelectTab;
+
+  const AppDrawer({
+    super.key,
+    this.onSelectTab,
+  });
 
   Future<void> _abrirSite() async {
     final url = Uri.parse('https://malveiracaiodev.github.io');
@@ -20,19 +23,17 @@ class AppDrawer extends StatelessWidget {
     }
   }
 
-  void _navigate(BuildContext context, Widget page) {
-    Navigator.pop(context); // Fecha o drawer primeiro para evitar travamento visual
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => page),
-    );
+  void _mudarAba(BuildContext context, int index) {
+    Navigator.pop(context); // Fecha o painel lateral com suavidade
+    if (onSelectTab != null) {
+      onSelectTab!(index); // Dispara a troca da aba ativa no Hub central
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: const Color(0xFF070B14), // Fundo espacial profundo escuro
+      backgroundColor: const Color(0xFF070B14), // Fundo espacial profundo escuro do Stitch
       child: Column(
         children: [
           const SizedBox(height: 60),
@@ -65,23 +66,26 @@ class AppDrawer extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // 🎛️ Itens de Navegação
+          // 🎛️ Itens de Navegação Sincronizados com as Abas do Stitch
           ListTile(
             leading: const Icon(Icons.rocket_launch, color: AstraTheme.primary),
             title: const Text('Dashboard', style: TextStyle(color: Colors.white, fontSize: 15)),
-            onTap: () => _navigate(context, const DashboardPage()),
+            onTap: () => _mudarAba(context, 0), // Ativa Aba 0 (Home)
           ),
 
           ListTile(
             leading: const Icon(Icons.credit_card, color: AstraTheme.primary),
             title: const Text('Compras Parceladas', style: TextStyle(color: Colors.white, fontSize: 15)),
-            onTap: () => _navigate(context, const ParcelasPage()),
+            onTap: () => _mudarAba(context, 1), // Ativa Aba 1 (Contratos/Parcelas)
           ),
 
           ListTile(
             leading: const Icon(Icons.history, color: AstraTheme.primary),
             title: const Text('Histórico Mensal', style: TextStyle(color: Colors.white, fontSize: 15)),
-            onTap: () => _navigate(context, const HistoricoPage()),
+            onTap: () {
+              // Quando sua HistoricoPage estiver pronta, você pode colocá-la na Aba 2
+              _mudarAba(context, 2); 
+            },
           ),
 
           ListTile(

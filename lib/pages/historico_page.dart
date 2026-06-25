@@ -7,7 +7,9 @@ import '../../widgets/app_drawer.dart';
 import '../../widgets/fundo_cosmico.dart';
 
 class HistoricoPage extends StatefulWidget {
-  const HistoricoPage({super.key});
+  final Function(int)? onSelectTab; // 🔥 Callback para controle integrado da navegação
+
+  const HistoricoPage({super.key, this.onSelectTab});
 
   @override
   State<HistoricoPage> createState() => _HistoricoPageState();
@@ -47,8 +49,8 @@ class _HistoricoPageState extends State<HistoricoPage> {
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF0A0F1E),
         title: Text(
-          "RE CONFIGURAR CORREÇÃO: ${item.mesAno}",
-          style: const TextStyle(color: AstraTheme.secondary, fontSize: 14, letterSpacing: 1),
+          "AJUSTAR DADOS DE FECHAMENTO: ${item.mesAno}",
+          style: const TextStyle(color: AstraTheme.secondary, fontSize: 13, letterSpacing: 1, fontWeight: FontWeight.bold),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -65,7 +67,11 @@ class _HistoricoPageState extends State<HistoricoPage> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text("SALVAR ALTERAÇÃO"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AstraTheme.primary,
+              foregroundColor: const Color(0xFF060B16),
+            ),
+            child: const Text("SALVAR ALTERAÇÕES", style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -86,7 +92,10 @@ class _HistoricoPageState extends State<HistoricoPage> {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Registros orbitais atualizados com sucesso!")),
+      const SnackBar(
+        content: Text("Registros de fechamento atualizados com sucesso!"),
+        backgroundColor: Color(0xFF0B1424),
+      ),
     );
   }
 
@@ -95,7 +104,7 @@ class _HistoricoPageState extends State<HistoricoPage> {
       padding: const EdgeInsets.only(bottom: 12.0),
       child: TextField(
         controller: controller,
-        keyboardType: TextInputType.number,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           labelText: label,
@@ -113,7 +122,7 @@ class _HistoricoPageState extends State<HistoricoPage> {
 
     return Scaffold(
       key: _scaffoldKey,
-      drawer: const AppDrawer(),
+      drawer: AppDrawer(onSelectTab: widget.onSelectTab), // 🔥 Sincronizado
       body: FundoCosmico(
         child: SafeArea(
           child: carregando
@@ -123,7 +132,7 @@ class _HistoricoPageState extends State<HistoricoPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 🌌 Barra Superior
+                      // 🌌 Barra Superior Executiva
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -140,11 +149,12 @@ class _HistoricoPageState extends State<HistoricoPage> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                          const SizedBox(width: 48), // Espaçador equivalente ao menu para centralizar o título
                         ],
                       ),
                       const SizedBox(height: 20),
 
-                      // 📜 Lista do Histórico Dividido Mês a Mês
+                      // 📜 Lista do Histórico Mensal
                       Expanded(
                         child: historico.isEmpty
                             ? const Center(
@@ -159,14 +169,14 @@ class _HistoricoPageState extends State<HistoricoPage> {
                                 itemBuilder: (context, index) {
                                   final mes = historico[index];
                                   final positivo = mes.resto >= 0;
-                                  final corBalanco = positivo ? Colors.greenAccent : Colors.redAccent;
+                                  final corBalanco = positivo ? const Color(0xFF00E5FF) : const Color(0xFFFF8C8C);
 
                                   return Container(
                                     margin: const EdgeInsets.only(bottom: 12),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.02),
+                                      color: const Color(0xFF0B1424).withOpacity(0.6),
                                       borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(color: Colors.white.withOpacity(0.05)),
+                                      border: Border.all(color: Colors.white.withOpacity(0.04)),
                                     ),
                                     child: ListTile(
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -179,7 +189,7 @@ class _HistoricoPageState extends State<HistoricoPage> {
                                           ),
                                           Text(
                                             "R\$ ${mes.resto.toStringAsFixed(2)}",
-                                            style: TextStyle(color: corBalanco, fontWeight: FontWeight.bold, fontSize: 16),
+                                            style: TextStyle(color: corBalanco, fontWeight: FontWeight.bold, fontSize: 16, fontFamily: 'monospace'),
                                           ),
                                         ],
                                       ),
@@ -189,7 +199,7 @@ class _HistoricoPageState extends State<HistoricoPage> {
                                           "Fixo: R\$ ${mes.ganhoFixo.toStringAsFixed(2)}\n"
                                           "Extras: R\$ ${mes.ganhosAdicionais.toStringAsFixed(2)}\n"
                                           "Gastos: R\$ ${mes.gastosTotais.toStringAsFixed(2)}",
-                                          style: const TextStyle(color: Colors.white54, fontSize: 13, height: 1.4),
+                                          style: const TextStyle(color: Colors.white54, fontSize: 13, height: 1.4, fontFamily: 'monospace'),
                                         ),
                                       ),
                                       trailing: IconButton(

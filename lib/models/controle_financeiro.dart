@@ -19,6 +19,26 @@ class ControleFinanceiro {
         totalParcelasDoMes; // 🔥 Agora o parcelamento reduz o saldo real!
   }
 
+  /// 🚀 APLICADOR DE VETOR (Conceito Stitch da Imagem 1)
+  /// Permite injetar uma nova transação baseada em sua Magnitude e Vetor de direção.
+  ControleFinanceiro aplicarTransacao({
+    required double magnitude,
+    required String vetor, // 'receita', 'despesa' ou 'prevista'
+  }) {
+    switch (vetor.toLowerCase()) {
+      case 'receita':
+      case 'entrada':
+        return copyWith(receitasExtras: receitasExtras + magnitude);
+      case 'despesa':
+      case 'saida':
+        return copyWith(despesas: despesas + magnitude);
+      case 'prevista':
+        return copyWith(despesasPrevistas: despesasPrevistas + magnitude);
+      default:
+        return this; // Vetor desconhecido, mantém o estado orbital intacto
+    }
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'receitasExtras': receitasExtras,

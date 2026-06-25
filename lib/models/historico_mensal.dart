@@ -11,9 +11,31 @@ class HistoricoMensal {
     required this.gastosTotais,
   });
 
-  /// 📊 resultado líquido do mês
+  /// 📊 Resultado líquido do mês (Saldo que sobrou)
   double get resto =>
       ganhoFixo + ganhosAdicionais - gastosTotais;
+
+  /// 📈 Receita total gerada no ciclo correspondente
+  double get receitaTotal => ganhoFixo + ganhosAdicionais;
+
+  /// ⭕ Percentual de orçamento consumido neste registro histórico (0.0 a 1.0)
+  double get percentualConsumido {
+    final total = receitaTotal;
+    if (total <= 0) return 1.0;
+    return (gastosTotais / total).clamp(0.0, 1.0);
+  }
+
+  /// 🚦 Status Operacional da Missão Passada
+  String get statusOrbital {
+    final saldo = resto;
+    if (saldo >= receitaTotal * 0.2) {
+      return "Sistemas Operando: Saúde excelente 🟢";
+    } else if (saldo >= 0) {
+      return "Sistemas Operando: Órbita estável 🟡";
+    } else {
+      return "Aviso Crítico: Déficit na Órbita 🔴";
+    }
+  }
 
   /// 🔁 NOVO: Permite edição/cópia com alterações dos meses passados
   HistoricoMensal copyWith({
@@ -30,7 +52,7 @@ class HistoricoMensal {
     );
   }
 
-  /// 💾 serialização
+  /// 💾 Serialização
   Map<String, dynamic> toMap() {
     return {
       'mesAno': mesAno,
@@ -40,7 +62,7 @@ class HistoricoMensal {
     };
   }
 
-  /// 🔐 desserialização segura
+  /// 🔐 Desserialização segura
   factory HistoricoMensal.fromMap(Map<String, dynamic> map) {
     return HistoricoMensal(
       mesAno: (map['mesAno'] ?? '') as String,
@@ -54,7 +76,7 @@ class HistoricoMensal {
   Map<String, dynamic> toJson() => toMap();
   factory HistoricoMensal.fromJson(Map<String, dynamic> json) => HistoricoMensal.fromMap(json);
 
-  /// 🧠 parser seguro
+  /// 🧠 Parser seguro
   static double _parseDouble(dynamic value) {
     if (value == null) return 0;
     if (value is double) return value;

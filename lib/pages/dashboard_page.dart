@@ -10,7 +10,9 @@ import '../../widgets/app_drawer.dart';
 import '../../widgets/fundo_cosmico.dart';
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+  final Function(int)? onSelectTab; // 🔥 Callback para controle unificado da navegação
+
+  const DashboardPage({super.key, this.onSelectTab});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -22,7 +24,7 @@ class _DashboardPageState extends State<DashboardPage> {
   ControleFinanceiro? controle;
   double totalParcelasMes = 0;
   bool carregando = true;
-  int _currentBottomIndex = 0; // Controle da BottomBar do Stitch
+  final int _currentBottomIndex = 0; // Index padrão desta página no fluxo de abas
 
   @override
   void initState() {
@@ -47,6 +49,8 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     final saldoReal = controle != null && usuario != null
         ? controle!.saldoFinal(usuario!.ganhoFixo, totalParcelasDoMes: totalParcelasMes)
         : 0.0;
@@ -57,40 +61,41 @@ class _DashboardPageState extends State<DashboardPage> {
     final double percentualConsumido = (totalGasto / orcamentoTotal).clamp(0.0, 1.0);
     final double restanteOrcamento = (orcamentoTotal - totalGasto).clamp(0.0, double.infinity);
 
+    // Soma correta de Entradas protegendo contra nulos
+    final totalEntradas = (usuario?.ganhoFixo ?? 0.0) + (controle?.receitasExtras ?? 0.0);
+
     return Scaffold(
       key: _scaffoldKey,
-      drawer: const AppDrawer(),
-      backgroundColor: const Color(0xFF060B16), // Fundo base ultra-dark do mockup
+      drawer: AppDrawer(onSelectTab: widget.onSelectTab), // 🔥 Sincronizado
+      backgroundColor: const Color(0xFF060B16),
       body: FundoCosmico(
         child: carregando
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF00E5FF)))
+            ? Center(child: CircularProgressIndicator(color: theme.primaryColor))
             : SafeArea(
                 child: Column(
                   children: [
-                    // 🛸 Top Navigation Bar (Stitch Design)
+                    // 🛸 Barra de Topo Executiva
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.rocket_launch_outlined, color: Colors.white, size: 26),
+                            icon: const Icon(Icons.menu, color: Colors.white, size: 26),
                             onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                           ),
                           const Text(
-                            "FINANÇAS MARK I",
+                            "PAINEL GERENCIAL",
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 16,
+                              fontSize: 14,
                               fontWeight: FontWeight.w800,
-                              letterSpacing: 1.2,
+                              letterSpacing: 1.5,
                             ),
                           ),
                           IconButton(
                             icon: const Icon(Icons.notifications_none_outlined, color: Colors.white80, size: 24),
-                            onPressed: () {
-                              // Ação de notificações futuras
-                            },
+                            onPressed: () {},
                           ),
                         ],
                       ),
@@ -106,19 +111,19 @@ class _DashboardPageState extends State<DashboardPage> {
                           children: [
                             const SizedBox(height: 10),
                             
-                            // 💎 CARD PRINCIPAL: SALDO ESTELAR ATUAL (Imagem 2)
+                            // 💎 CARD PRINCIPAL: SALDO CONSOLIDADO
                             Container(
                               width: double.infinity,
                               padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
                               decoration: BoxDecoration(
                                 color: const Color(0xFF0B1424).withOpacity(0.6),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.15)),
+                                border: Border.all(color: AstraTheme.primary.withOpacity(0.15)),
                               ),
                               child: Column(
                                 children: [
                                   const Text(
-                                    "SALDO ESTELAR ATUAL",
+                                    "SALDO ATUAL CONSOLIDADO",
                                     style: TextStyle(
                                       color: Colors.white38,
                                       fontSize: 11,
@@ -137,21 +142,20 @@ class _DashboardPageState extends State<DashboardPage> {
                                     ),
                                   ),
                                   const SizedBox(height: 12),
-                                  // Badge de variação/estabilidade do mockup
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF00E5FF).withOpacity(0.08),
+                                      color: AstraTheme.primary.withOpacity(0.08),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: const Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(Icons.trending_up, color: Color(0xFF00E5FF), size: 14),
+                                        Icon(Icons.shield_out_lined, color: AstraTheme.primary, size: 14),
                                         SizedBox(width: 6),
                                         Text(
-                                          "Sistemas Operando em Estabilidade",
-                                          style: TextStyle(color: Color(0xFF00E5FF), fontSize: 11, fontWeight: FontWeight.bold),
+                                          "Ambiente Operacional Seguro",
+                                          style: TextStyle(color: AstraTheme.primary, fontSize: 11, fontWeight: FontWeight.bold),
                                         ),
                                       ],
                                     ),
@@ -162,19 +166,19 @@ class _DashboardPageState extends State<DashboardPage> {
                             
                             const SizedBox(height: 16),
 
-                            // 📉 CARD DE ENTRADAS (Imagem 2)
+                            // 📉 CARD DE ENTRADAS
                             _buildVerticalFluxCard(
-                              titulo: "ENTRADAS",
-                              valor: "R\$ ${(usuario?.ganhoFixo ?? 0.0 + (controle?.receitasExtras ?? 0.0)).toStringAsFixed(2)}",
+                              titulo: "ENTRADAS TOTAIS",
+                              valor: "R\$ ${totalEntradas.toStringAsFixed(2)}",
                               corLinha: const Color(0xFF00E5FF),
                               icone: Icons.arrow_downward,
                             ),
 
                             const SizedBox(height: 16),
 
-                            // 📈 CARD DE SAÍDAS (Imagem 2)
+                            // 📈 CARD DE SAÍDAS
                             _buildVerticalFluxCard(
-                              titulo: "SAÍDAS",
+                              titulo: "SAÍDAS TOTAIS",
                               valor: "R\$ ${totalGasto.toStringAsFixed(2)}",
                               corLinha: const Color(0xFFFF8C8C),
                               icone: Icons.arrow_upward,
@@ -182,7 +186,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
                             const SizedBox(height: 16),
 
-                            // ⭕ CARD ORÇAMENTO DO MÊS COM GRÁFICO CIRCULAR (Imagem 2)
+                            // ⭕ CARD ORÇAMENTO DO MÊS COM GRÁFICO CIRCULAR
                             Container(
                               width: double.infinity,
                               padding: const EdgeInsets.all(20),
@@ -194,8 +198,8 @@ class _DashboardPageState extends State<DashboardPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text("ORÇAMENTO DO MÊS", style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
-                                  const Text("Ciclo Atual Ativo", style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold)),
+                                  const Text("ORÇAMENTO MENSAL", style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                                  const Text("Demonstrativo do Ciclo Ativo", style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 24),
                                   Center(
                                     child: Stack(
@@ -212,12 +216,13 @@ class _DashboardPageState extends State<DashboardPage> {
                                           ),
                                         ),
                                         Column(
+                                          mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Text(
                                               "${(percentualConsumido * 100).toStringAsFixed(0)}%",
                                               style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                                             ),
-                                            const Text("CONSUMIDO", style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
+                                            const Text("UTILIZADO", style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
                                           ],
                                         )
                                       ],
@@ -227,7 +232,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      const Text("Restante Disponível", style: TextStyle(color: Colors.white54, fontSize: 13)),
+                                      const Text("Limite de Saldo Disponível", style: TextStyle(color: Colors.white54, fontSize: 13)),
                                       Text(
                                         "R\$ ${restanteOrcamento.toStringAsFixed(2)}",
                                         style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold, fontFamily: 'monospace'),
@@ -247,7 +252,7 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
       ),
       
-      // 🕹️ NAV BAR INFERIOR - FIEL AO MOCKUP DO STITCH (Imagem 2 / Imagem 3)
+      // 🕹️ NAV BAR INFERIOR CONECTADA AO CALLBACK CENTRAL
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: const Color(0xFF070D19),
@@ -259,14 +264,12 @@ class _DashboardPageState extends State<DashboardPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildBottomActionItem(index: 0, icone: Icons.home_filled, label: "Home"),
-                _buildBottomActionItem(index: 1, icone: Icons.history, label: "History"),
+                _buildBottomActionItem(index: 0, icone: Icons.home_filled, label: "Início"),
+                _buildBottomActionItem(index: 1, icone: Icons.history, label: "Histórico"),
                 
-                // 🔥 Botão Central Flutuante Embutido (+)
+                // 🔥 Botão Central leva para a tela de novos lançamentos operacionais (ex: aba index 2 ou 3 conforme sua arquitetura)
                 GestureDetector(
-                  onTap: () {
-                    // Direciona para a abertura de Nova Operação (Imagem 1)
-                  },
+                  onTap: () => widget.onSelectTab?.call(2), 
                   child: Container(
                     width: 48,
                     height: 48,
@@ -281,8 +284,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ),
                 
-                _buildBottomActionItem(index: 2, icone: Icons.bar_chart_outlined, label: "Stats"),
-                _buildBottomActionItem(index: 3, icone: Icons.settings_outlined, label: "Settings"),
+                _buildBottomActionItem(index: 3, icone: Icons.bar_chart_outlined, label: "Relatórios"),
+                _buildBottomActionItem(index: 4, icone: Icons.settings_outlined, label: "Ajustes"),
               ],
             ),
           ),
@@ -291,7 +294,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // Widget auxiliar para montar os cards de Entradas/Saídas com a linha de vetor acentuada
   Widget _buildVerticalFluxCard({required String titulo, required String valor, required Color corLinha, required IconData icone}) {
     return Container(
       width: double.infinity,
@@ -318,7 +320,6 @@ class _DashboardPageState extends State<DashboardPage> {
           const SizedBox(height: 8),
           Text(valor, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
           const SizedBox(height: 12),
-          // Linha de progresso constante/vetorial do Stitch
           ClipRRect(
             borderRadius: BorderRadius.circular(2),
             child: LinearProgressIndicator(
@@ -333,16 +334,10 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // Construtor dos botões da barra de navegação inferior
   Widget _buildBottomActionItem({required int index, required IconData icone, required String label}) {
     final bool ativo = _currentBottomIndex == index;
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _currentBottomIndex = index;
-        });
-        // Vinculação futura para navegação indexada entre páginas
-      },
+      onTap: () => widget.onSelectTab?.call(index), // Redireciona a mudança de aba para a estrutura mãe
       child: Container(
         color: Colors.transparent,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
