@@ -52,7 +52,7 @@ class ControleService {
     return false; 
   }
 
-  static Future<void> encerarMes() async {
+  static Future<void> encerrarMes() async {
     final controle = await carregarControle();
     final usuario = await PreferencesService.carregarUsuario();
     final totalParcelasMes = await ParcelasService.calcularTotalMes();
