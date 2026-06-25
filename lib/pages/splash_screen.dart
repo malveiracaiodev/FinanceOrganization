@@ -51,15 +51,22 @@ class _SplashScreenState extends State<SplashScreen>
       final user = await PreferencesService.carregarUsuario();
       await ControleService.carregarControle();
 
-      // 2. LÓGICA DE TRANSIÇÃO DE CICLO MENSAL
+      // 2. LÓGICA DINÂMICA DE TRANSIÇÃO DE CICLO MENSAL (Sem Dead Code)
       if (user != null) {
-        // TODO: Implementar a verificação real se o mês mudou no PreferencesService
-        final bool mesMudou = false; 
+        final dataAtual = DateTime.now();
+        
+        // Compara o mês do sistema com o último mês salvo no perfil do usuário
+        final bool mesMudou = dataAtual.month != user.ultimoMesVerificado; 
         
         if (mesMudou) {
-          // Se o mês mudou, roda o processamento controlado das parcelas
+          // Processa o avanço das parcelas ativas
           await ParcelasService.processarMes();
-          // Recarrega o controle para garantir que a UI pegue os novos valores consolidados
+          
+          // Atualiza o mês verificado no perfil para evitar reprocessamento no mesmo mês
+          final usuarioAtualizado = user.copyWith(ultimoMesVerificado: dataAtual.month);
+          await PreferencesService.salvarUsuario(usuarioAtualizado);
+          
+          // Recarrega os dados financeiros atualizados
           await ControleService.carregarControle();
         }
       }
@@ -68,12 +75,12 @@ class _SplashScreenState extends State<SplashScreen>
 
       setState(() => _loading = false);
 
-      // Pequena pausa com os sistemas prontos para suavizar a transição
+      // Pequena pausa com os sistemas prontos para suavizar a transição visual
       await Future.delayed(const Duration(milliseconds: 500));
 
       if (!mounted) return;
 
-      // 3. Roteamento baseado na existência do perfil de usuário
+      // 3. Roteamento definitivo baseado na existência do usuário
       if (user == null) {
         _goToCadastro();
       } else {
@@ -121,8 +128,8 @@ class _SplashScreenState extends State<SplashScreen>
             children: [
               ScaleTransition(
                 scale: _animation,
-                child: Icon(
-                  Icons.donut_large_rounded, // Ícone moderno e limpo, alinhado ao nicho finanças/gráficos
+                child: const Icon(
+                  Icons.donut_large_rounded, 
                   size: 80,
                   color: AstraTheme.primary,
                 ),
