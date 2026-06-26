@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart'; // 🔥 Import oficial corrigido
+import 'package:url_launcher/url_launcher.dart';
 
 class AppDrawer extends StatelessWidget {
-  const AppDrawer({super.key});
+  // 🔥 Adicionado o parâmetro requisitado pelas suas páginas de Dashboard e Parcelas
+  final Function(int)? onSelectTab;
+
+  const AppDrawer({
+    super.key,
+    this.onSelectTab,
+  });
 
   /// 🌐 Método seguro para abrir o site orbital externo
   Future<void> _abrirLink(BuildContext context, String url) async {
@@ -11,7 +17,7 @@ class AppDrawer extends StatelessWidget {
       if (await canLaunchUrl(uri)) {
         await launchUrl(
           uri,
-          mode: LaunchMode.externalApplication, // 🔥 Enumeração corrigida
+          mode: LaunchMode.externalApplication,
         );
       } else {
         throw 'Não foi possível abrir o link $url';
@@ -65,12 +71,22 @@ class AppDrawer extends StatelessWidget {
                 ],
               ),
             ),
+            
+            // Exemplo de como usar o onSelectTab se precisar mudar para a aba Home (0), por exemplo:
+            ListTile(
+              leading: const Icon(Icons.dashboard_rounded, color: Color(0xFF00B4D8)),
+              title: const Text("Dashboard", style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                if (onSelectTab != null) onSelectTab!(0); // Navega para o Hub principal se fornecido
+              },
+            ),
+
             ListTile(
               leading: const Icon(Icons.info_outline_rounded, color: Color(0xFF00B4D8)),
               title: const Text("Suporte & Documentação", style: TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.pop(context);
-                // Submeta o URL do seu site ou repositório aqui
                 _abrirLink(context, "https://github.com");
               },
             ),
