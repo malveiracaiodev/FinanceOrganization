@@ -25,10 +25,15 @@ class _ParcelasPageState extends State<ParcelasPage> {
   }
 
   Future<void> carregar() async {
+    // 🔥 Sincroniza limpando o cache estático para garantir dados frescos do SharedPreferences
+    ParcelasService.limparCache();
     final dados = await ParcelasService.carregarParcelas();
+    
     if (!mounted) return;
+    
     setState(() {
-      parcelas = dados.where((p) => !p.finalizada).toList();
+      // 🔥 CORRIGIDO: Vinculado à propriedade real 'ativa' do seu modelo de dados
+      parcelas = dados.where((p) => p.ativa).toList();
       carregando = false;
     });
   }
@@ -39,6 +44,7 @@ class _ParcelasPageState extends State<ParcelasPage> {
     } else {
       await ParcelasService.atrasarContrato(id);
     }
+    // Recarrega a tela imediatamente após alterar o estado no banco
     await carregar();
   }
 
@@ -51,8 +57,7 @@ class _ParcelasPageState extends State<ParcelasPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      drawer: AppDrawer(onSelectTab: widget.onSelectTab), // 🔥 Menu integrado
-      backgroundColor: const Color(0xFF060B16),
+      drawer: AppDrawer(onSelectTab: widget.onSelectTab), // Menu integrado
       body: FundoCosmico(
         child: SafeArea(
           child: Padding(
@@ -60,19 +65,19 @@ class _ParcelasPageState extends State<ParcelasPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Barra Superior Corporativa
+                // Barra Superior Estilo Cabine Intergaláctica
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.menu, color: Colors.white, size: 26),
+                      icon: const Icon(Icons.notes_rounded, color: Colors.white, size: 28),
                       onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                     ),
                     const Text(
-                      "GERENCIAMENTO DE CONTRATOS",
+                      "SISTEMA DE CONTRATOS",
                       style: TextStyle(
-                        color: Colors.white54,
-                        fontSize: 12,
+                        color: Color(0xFF00B4D8), // Azul Neon Stitch
+                        fontSize: 11,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 2,
                       ),
@@ -82,18 +87,18 @@ class _ParcelasPageState extends State<ParcelasPage> {
                 ),
                 const SizedBox(height: 24),
                 const Text(
-                  "Parcelamentos",
+                  "Compras Parceladas",
                   style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
                 ),
                 const Text(
-                  "Compromissos de longo prazo sob auditoria.",
+                  "Compromissos de longo prazo sob auditoria orbital.",
                   style: TextStyle(color: Colors.white54, fontSize: 13),
                 ),
                 const SizedBox(height: 24),
 
                 Expanded(
                   child: carregando
-                      ? const Center(child: CircularProgressIndicator(color: Color(0xFF00E5FF)))
+                      ? const Center(child: CircularProgressIndicator(color: Color(0xFF00B4D8)))
                       : parcelas.isEmpty
                           ? const Center(
                               child: Text(
@@ -114,9 +119,9 @@ class _ParcelasPageState extends State<ParcelasPage> {
                                   margin: const EdgeInsets.only(bottom: 16),
                                   padding: const EdgeInsets.all(20),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF0B1424).withOpacity(0.6),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: Colors.white.withOpacity(0.04)),
+                                    color: const Color(0xFF0B1424).withValues(alpha: 0.6), // Sintaxe moderna
+                                    borderRadius: BorderRadius.circular(20), // Bordas mais arredondadas Stitch UI
+                                    border: Border.all(color: const Color(0xFF1A2740), width: 1.5),
                                   ),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,30 +137,30 @@ class _ParcelasPageState extends State<ParcelasPage> {
                                           ),
                                           Text(
                                             "${p.parcelaAtual.toString().padLeft(2, '0')}/${p.totalParcelas.toString().padLeft(2, '0')}",
-                                            style: const TextStyle(color: Colors.white70, fontSize: 13, fontFamily: 'monospace'),
+                                            style: const TextStyle(color: Color(0xFF8CE8FF), fontSize: 13, fontFamily: 'monospace', fontWeight: FontWeight.bold),
                                           ),
                                         ],
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         "Impacto mensal: R\$ ${p.valorParcela.toStringAsFixed(2)}",
-                                        style: const TextStyle(color: Color(0xFF00E5FF), fontSize: 12),
+                                        style: const TextStyle(color: Color(0xFF00B4D8), fontSize: 12, fontWeight: FontWeight.w600),
                                       ),
                                       const SizedBox(height: 16),
                                       
-                                      // Barra Neon de Progresso
+                                      // Barra Neon de Progresso Otimizada
                                       ClipRRect(
                                         borderRadius: BorderRadius.circular(4),
                                         child: LinearProgressIndicator(
                                           value: progresso.clamp(0.0, 1.0),
-                                          backgroundColor: Colors.white.withOpacity(0.05),
-                                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00E5FF)),
+                                          backgroundColor: Colors.white.withValues(alpha: 0.05),
+                                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00B4D8)),
                                           minHeight: 6,
                                         ),
                                       ),
                                       const SizedBox(height: 12),
                                       
-                                      // Painel de Operações da Parcela
+                                      // Painel de Operações da Parcela Estilizado
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
@@ -163,19 +168,20 @@ class _ParcelasPageState extends State<ParcelasPage> {
                                             children: [
                                               IconButton(
                                                 tooltip: "Retroceder Parcela",
-                                                icon: const Icon(Icons.remove_circle_outline, color: Colors.orangeAccent, size: 20),
+                                                icon: const Icon(Icons.remove_circle_outline, color: Colors.orangeAccent, size: 22),
                                                 onPressed: () => ajustarTempo(p.id, false),
                                               ),
+                                              const SizedBox(width: 8),
                                               IconButton(
                                                 tooltip: "Avançar/Quitar Parcela",
-                                                icon: const Icon(Icons.add_circle_outline, color: Color(0xFF00E5FF), size: 20),
+                                                icon: const Icon(Icons.add_circle_outline, color: Color(0xFF00B4D8), size: 22),
                                                 onPressed: () => ajustarTempo(p.id, true),
                                               ),
                                             ],
                                           ),
                                           IconButton(
                                             tooltip: "Remover Parcelamento",
-                                            icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 22),
                                             onPressed: () => excluir(p.id),
                                           ),
                                         ],

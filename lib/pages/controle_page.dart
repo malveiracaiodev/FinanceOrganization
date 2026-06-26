@@ -10,7 +10,7 @@ import '../widgets/app_drawer.dart';
 import '../widgets/fundo_cosmico.dart';
 
 class ControlePage extends StatefulWidget {
-  final Function(int)? onSelectTab; // 🔥 Adicionado callback para sincronia perfeita com as abas
+  final Function(int)? onSelectTab; // Callback para sincronia perfeita com as abas
 
   const ControlePage({super.key, this.onSelectTab});
 
@@ -37,19 +37,32 @@ class _ControlePageState extends State<ControlePage> {
     carregarDados();
   }
 
+  @override
+  void dispose() {
+    receitaController.dispose();
+    despesaController.dispose();
+    previstoController.dispose();
+    super.dispose();
+  }
+
   Future<void> carregarDados() async {
-    final usuarioCarregado = await PreferencesService.carregarUsuario();
-    final controleCarregado = await ControleService.carregarControle();
-    final parcelas = await ParcelasService.calcularTotalMes();
+    try {
+      final usuarioCarregado = await PreferencesService.carregarUsuario();
+      final controleCarregado = await ControleService.carregarControle();
+      final parcelas = await ParcelasService.calcularTotalMes();
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() {
-      usuario = usuarioCarregado;
-      controle = controleCarregado;
-      totalParcelasMes = parcelas;
-      carregando = false;
-    });
+      setState(() {
+        usuario = usuarioCarregado;
+        controle = controleCarregado;
+        totalParcelasMes = parcelas;
+        carregando = false;
+      });
+    } catch (e) {
+      debugPrint("Erro ao auditar dados de fluxo: $e");
+      if (mounted) setState(() => carregando = false);
+    }
   }
 
   bool _valorValido(String text) {
@@ -86,9 +99,10 @@ class _ControlePageState extends State<ControlePage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF0A0F1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           'ENCERRAR CICLO MENSAL',
-          style: TextStyle(color: AstraTheme.secondary, fontSize: 14, letterSpacing: 1, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Color(0xFFFF6B6B), fontSize: 13, letterSpacing: 1, fontWeight: FontWeight.bold),
         ),
         content: const Text(
           'Confirmar o encerramento do ciclo atual? Os dados correntes serão compilados no histórico gerencial e o painel redefinido para o próximo mês.',
@@ -101,8 +115,12 @@ class _ControlePageState extends State<ControlePage> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: const Text('CONFIRMAR FECHAMENTO', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF6B6B),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('CONFIRMAR FECHAMENTO', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -116,25 +134,26 @@ class _ControlePageState extends State<ControlePage> {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Ciclo mensal encerrado e arquivado com sucesso!')),
+      const SnackBar(
+        content: Text('Ciclo mensal encerrado e arquivado com sucesso!'),
+        backgroundColor: Color(0xFF0B1424),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     final saldo = controle != null && usuario != null
         ? controle!.saldoFinal(usuario!.ganhoFixo, totalParcelasDoMes: totalParcelasMes)
         : 0.0;
 
     return Scaffold(
       key: _scaffoldKey,
-      drawer: AppDrawer(onSelectTab: widget.onSelectTab), // 🔥 Injetado controle síncrono no Drawer
+      drawer: AppDrawer(onSelectTab: widget.onSelectTab),
       body: FundoCosmico(
         child: SafeArea(
           child: carregando
-              ? Center(child: CircularProgressIndicator(color: theme.primaryColor))
+              ? const Center(child: CircularProgressIndicator(color: Color(0xFF00B4D8)))
               : ListView(
                   padding: const EdgeInsets.all(20),
                   physics: const BouncingScrollPhysics(),
@@ -144,18 +163,19 @@ class _ControlePageState extends State<ControlePage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.menu, color: Colors.white, size: 28),
+                          icon: const Icon(Icons.notes_rounded, color: Colors.white, size: 28),
                           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                         ),
                         const Text(
                           "LANÇAMENTOS DE FLUXO",
                           style: TextStyle(
-                            color: Colors.white54,
+                            color: Color(0xFF00B4D8),
                             fontSize: 12,
                             letterSpacing: 2,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+                        const SizedBox(width: 48),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -164,9 +184,9 @@ class _ControlePageState extends State<ControlePage> {
                     Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.03),
+                        color: const Color(0xFF0B1424).withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: Colors.white.withOpacity(0.08)),
+                        border: Border.all(color: const Color(0xFF00B4D8).withValues(alpha: 0.15)),
                       ),
                       padding: const EdgeInsets.all(24),
                       child: Column(
@@ -179,10 +199,11 @@ class _ControlePageState extends State<ControlePage> {
                           Text(
                             'R\$ ${saldo.toStringAsFixed(2)}',
                             style: const TextStyle(
-                              fontSize: 34,
-                              color: AstraTheme.secondary,
+                              fontSize: 36,
+                              color: Color(0xFF8CE8FF),
                               fontWeight: FontWeight.bold,
                               letterSpacing: -0.5,
+                              fontFamily: 'monospace',
                             ),
                           ),
                         ],
@@ -191,35 +212,35 @@ class _ControlePageState extends State<ControlePage> {
 
                     const SizedBox(height: 16),
 
-                    // 📊 Painel de Resumos
+                    // 📊 Painel de Resumos Protegido contra Nulos (Null-Safe)
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.01),
+                        color: const Color(0xFF0B1424).withValues(alpha: 0.4),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white.withOpacity(0.04)),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
                       ),
                       padding: const EdgeInsets.all(18),
                       child: Column(
                         children: [
-                          _linhaResumo('Renda Base (Salário)', usuario!.ganhoFixo, Colors.cyanAccent),
-                          _linhaResumo('Receitas Extras', controle!.receitasExtras, Colors.greenAccent),
-                          _linhaResumo('Despesas Diárias', controle!.despesas, Colors.redAccent),
-                          _linhaResumo('Despesas Previstas', controle!.despesasPrevistas, Colors.orangeAccent),
+                          _linhaResumo('Renda Base (Salário)', usuario?.ganhoFixo ?? 0.0, const Color(0xFF00B4D8)),
+                          _linhaResumo('Receitas Extras', controle?.receitasExtras ?? 0.0, const Color(0xFF8CE8FF)),
+                          _linhaResumo('Despesas Diárias', controle?.despesas ?? 0.0, const Color(0xFFFF6B6B)),
+                          _linhaResumo('Despesas Previstas', controle?.despesasPrevistas ?? 0.0, Colors.orangeAccent),
                           _linhaResumo('Fatura de Parcelas', totalParcelasMes, const Color(0xFFE040FB)),
                         ],
                       ),
                     ),
 
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 24),
 
-                    // 🛠️ Módulos de Entrada de Dados Profissionalizados
+                    // 🛠️ Módulos de Entrada de Dados
                     _campoFinanceiro(
                       controller: receitaController,
                       titulo: 'RECEITA EXTRA',
                       botao: 'INJETAR',
                       onPressed: adicionarReceita,
-                      corIcone: Colors.greenAccent,
-                      icone: Icons.add_chart,
+                      corIcone: const Color(0xFF8CE8FF),
+                      icone: Icons.add_chart_rounded,
                     ),
 
                     const SizedBox(height: 16),
@@ -229,8 +250,8 @@ class _ControlePageState extends State<ControlePage> {
                       titulo: 'REGISTRAR DESPESA',
                       botao: 'DEBITAR',
                       onPressed: adicionarDespesa,
-                      corIcone: Colors.redAccent,
-                      icone: Icons.money_off,
+                      corIcone: const Color(0xFFFF6B6B),
+                      icone: Icons.money_off_rounded,
                     ),
 
                     const SizedBox(height: 16),
@@ -241,7 +262,7 @@ class _ControlePageState extends State<ControlePage> {
                       botao: 'PROJETAR',
                       onPressed: adicionarPrevisto,
                       corIcone: Colors.orangeAccent,
-                      icone: Icons.analytics,
+                      icone: Icons.analytics_rounded,
                     ),
 
                     const SizedBox(height: 32),
@@ -252,18 +273,18 @@ class _ControlePageState extends State<ControlePage> {
                       child: ElevatedButton.icon(
                         onPressed: encerrarMes,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.05),
-                          side: const BorderSide(color: Colors.redAccent, width: 1),
+                          backgroundColor: const Color(0xFFFF6B6B).withValues(alpha: 0.05),
+                          side: const BorderSide(color: Color(0xFFFF6B6B), width: 1),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ),
-                        icon: const Icon(Icons.archive, color: Colors.redAccent, size: 20),
+                        icon: const Icon(Icons.archive_rounded, color: Color(0xFFFF6B6B), size: 20),
                         label: const Text(
                           'CONCLUIR E FECHAR MÊS CORRENTE',
-                          style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, letterSpacing: 1),
+                          style: TextStyle(color: Color(0xFFFF6B6B), fontWeight: FontWeight.bold, letterSpacing: 1),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
                   ],
                 ),
         ),
@@ -280,7 +301,7 @@ class _ControlePageState extends State<ControlePage> {
           Text(titulo, style: const TextStyle(color: Colors.white70, fontSize: 14)),
           Text(
             'R\$ ${valor.toStringAsFixed(2)}',
-            style: TextStyle(color: cor, fontWeight: FontWeight.bold, fontSize: 14),
+            style: TextStyle(color: cor, fontWeight: FontWeight.bold, fontSize: 14, fontFamily: 'monospace'),
           ),
         ],
       ),
@@ -297,9 +318,9 @@ class _ControlePageState extends State<ControlePage> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.01),
+        color: const Color(0xFF0B1424).withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.04)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -324,12 +345,11 @@ class _ControlePageState extends State<ControlePage> {
                   child: TextField(
                     controller: controller,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: const TextStyle(color: Colors.white, fontSize: 15),
+                    style: const TextStyle(color: Colors.white, fontSize: 15, fontFamily: 'monospace'),
                     decoration: InputDecoration(
                       prefixText: 'R\$ ',
                       prefixStyle: TextStyle(color: corIcone, fontWeight: FontWeight.bold),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      // Removemos as bordas inline e deixamos herdar do inputDecorationTheme do AstraTheme!
                     ),
                   ),
                 ),
@@ -340,6 +360,8 @@ class _ControlePageState extends State<ControlePage> {
                 child: ElevatedButton(
                   onPressed: onPressed,
                   style: ElevatedButton.styleFrom(
+                    backgroundColor: corIcone.withValues(alpha: 0.8),
+                    foregroundColor: const Color(0xFF060B16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                   ),

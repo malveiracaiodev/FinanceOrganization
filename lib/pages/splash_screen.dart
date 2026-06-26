@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_theme.dart';
 import '../services/preferences_service.dart';
 import '../services/controle_service.dart';
-import '../services/parcelas_service.dart'; 
 
-import 'dashboard_page.dart';
+import 'main_hub_page.dart'; // 🔥 IMPORT DA NOVA TELA PRINCIPAL
 import 'cadastro_page.dart';
 import '../widgets/fundo_cosmico.dart'; 
 
@@ -51,7 +50,7 @@ class _SplashScreenState extends State<SplashScreen>
       final user = await PreferencesService.carregarUsuario();
       await ControleService.carregarControle();
 
-      // 2. LÓGICA DINÂMICA DE TRANSIÇÃO DE CICLO MENSAL (Sem Dead Code)
+      // 2. LÓGICA DINÂMICA DE TRANSIÇÃO DE CICLO MENSAL (Sincronizada)
       if (user != null) {
         final dataAtual = DateTime.now();
         
@@ -59,15 +58,8 @@ class _SplashScreenState extends State<SplashScreen>
         final bool mesMudou = dataAtual.month != user.ultimoMesVerificado; 
         
         if (mesMudou) {
-          // Processa o avanço das parcelas ativas
-          await ParcelasService.processarMes();
-          
-          // Atualiza o mês verificado no perfil para evitar reprocessamento no mesmo mês
-          final usuarioAtualizado = user.copyWith(ultimoMesVerificado: dataAtual.month);
-          await PreferencesService.salvarUsuario(usuarioAtualizado);
-          
-          // Recarrega os dados financeiros atualizados
-          await ControleService.carregarControle();
+          // 🔥 CORRIGIDO: Roda a virada completa (Gera histórico, roda parcelas e recalcula o novo saldo)
+          await ControleService.encerrarMes();
         }
       }
 
@@ -84,7 +76,7 @@ class _SplashScreenState extends State<SplashScreen>
       if (user == null) {
         _goToCadastro();
       } else {
-        _goToDashboard();
+        _goToMainHub(); // 🔥 Alterado para ir para a nova página Main
       }
     } catch (e) {
       debugPrint("Erro na inicialização do app: $e");
@@ -94,11 +86,12 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
-  void _goToDashboard() {
+  // 🚀 ROTA ATUALIZADA: Direciona para a MainHubPage como o portal de entrada do app
+  void _goToMainHub() {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => const DashboardPage(),
+        builder: (_) => const MainHubPage(),
       ),
     );
   }

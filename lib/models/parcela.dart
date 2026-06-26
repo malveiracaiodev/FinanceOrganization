@@ -18,10 +18,10 @@ class Parcela {
   });
 
   /// 💰 Retorna o valor impactado no mês atual se o contrato estiver ativo e não finalizado
-  double get valorDoMes => (ativa && !finalizada) ? valorParcela : 0;
+  double get valorDoMes => (ativa && !finalizada) ? valorParcela : 0.0;
   
-  /// 🏁 Verifica se o contrato orbital atingiu o limite de parcelas estabelecido
-  bool get finalizada => parcelaAtual > totalParcelas;
+  /// 🏁 Verifica se o cronograma orbital de parcelas já foi totalmente quitado
+  bool get finalizada => parcelaAtual > totalParcelas || !ativa;
 
   /// ⏩ Adiantar uma parcela (Acelera o cronograma de amortização)
   Parcela adiantar() {
@@ -38,11 +38,11 @@ class Parcela {
     final anterior = parcelaAtual - 1;
     return copyWith(
       parcelaAtual: anterior,
-      ativa: true, // Reativa caso estivesse marcada como concluída
+      ativa: true, // Reativa automaticamente caso estivesse marcada como concluída
     );
   }
 
-  /// 🔄 Mantido por compatibilidade com chamadas antigas de sincronismo de serviços
+  /// 🔄 Alias de compatibilidade com chamadas antigas de sincronismo de serviços
   Parcela avancarParcela() => adiantar();
 
   Parcela copyWith({
@@ -92,15 +92,15 @@ class Parcela {
   Map<String, dynamic> toJson() => toMap();
   factory Parcela.fromJson(Map<String, dynamic> json) => Parcela.fromMap(json);
 
-  /// 🧠 Parser seguro para decimais
+  /// 🧠 Parser seguro para decimais (Garante estabilidade contra double/int dinâmicos)
   static double _parseDouble(dynamic value) {
-    if (value == null) return 0;
+    if (value == null) return 0.0;
     if (value is double) return value;
     if (value is int) return value.toDouble();
-    return double.tryParse(value.toString()) ?? 0;
+    return double.tryParse(value.toString()) ?? 0.0;
   }
 
-  /// 🧠 Parser seguro para inteiros (Evita quebras do JSON no SQLite/Preferences)
+  /// 🧠 Parser seguro para inteiros
   static int _parseInt(dynamic value, {int padrao = 0}) {
     if (value == null) return padrao;
     if (value is int) return value;

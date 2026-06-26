@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/usuario.dart';
 import '../services/preferences_service.dart';
 import '../widgets/fundo_cosmico.dart';
-import 'navegacao_page.dart'; // 🔥 Ajustado para o hub centralizado de abas
+import 'navegacao_page.dart'; // Hub centralizado de abas
 
 class CadastroPage extends StatefulWidget {
   const CadastroPage({super.key});
@@ -20,6 +20,17 @@ class _CadastroPageState extends State<CadastroPage> {
   final ganhoController = TextEditingController();
 
   bool salvando = false;
+
+  @override
+  void dispose() {
+    // 🔥 Liberação obrigatória de fluxo de memória (Previne Memory Leaks)
+    nomeController.dispose();
+    sobrenomeController.dispose();
+    empresaController.dispose();
+    cargoController.dispose();
+    ganhoController.dispose();
+    super.dispose();
+  }
 
   Future<void> salvarCadastro() async {
     if (nomeController.text.trim().isEmpty ||
@@ -65,7 +76,7 @@ class _CadastroPageState extends State<CadastroPage> {
 
     if (!mounted) return;
 
-    // 🔥 Correção crucial de rota: Entra no hub com a barra de navegação ativa
+    // Redirecionamento limpo substituindo a pilha de navegação
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const NavegacaoPage()),
     );
@@ -73,9 +84,8 @@ class _CadastroPageState extends State<CadastroPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Scaffold(
+      backgroundColor: const Color(0xFF060B16),
       body: FundoCosmico(
         child: SafeArea(
           child: Padding(
@@ -83,13 +93,13 @@ class _CadastroPageState extends State<CadastroPage> {
             child: ListView(
               physics: const BouncingScrollPhysics(),
               children: [
-                const SizedBox(height: 30),
+                const SizedBox(height: 40),
                 
-                Center(
+                const Center(
                   child: Icon(
-                    Icons.analytics_outlined, // Ícone mais corporativo/financeiro
-                    size: 60,
-                    color: theme.primaryColor,
+                    Icons.analytics_rounded,
+                    size: 64,
+                    color: Color(0xFF00B4D8), // Unificado ao tom orbital do Stitch
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -98,50 +108,61 @@ class _CadastroPageState extends State<CadastroPage> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF00D4FF),
+                    color: Color(0xFF00B4D8),
                     letterSpacing: 3,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
+                const Text(
                   "Configuração de Conta",
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineMedium?.copyWith(color: Colors.white),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 32),
 
                 // 📝 Formulário Profissionalizado
-                _campo("Nome do Usuário", nomeController, icon: Icons.person_outline),
+                _campo("Nome do Usuário", nomeController, icon: Icons.person_outline_rounded),
                 _campo("Sobrenome", sobrenomeController, icon: Icons.badge_outlined),
-                _campo("Empresa / Organização", empresaController, icon: Icons.business_outlined),
-                _campo("Cargo / Função", cargoController, icon: Icons.work_outline),
+                _campo("Empresa / Organização", empresaController, icon: Icons.business_center_outlined),
+                _campo("Cargo / Função", cargoController, icon: Icons.work_outline_rounded),
 
                 _campo(
                   "Renda Mensal Base (Salário)",
                   ganhoController,
-                  teclado: TextInputType.number,
+                  teclado: const TextInputType.numberWithOptions(decimal: true),
                   prefixo: "R\$ ",
                   icon: Icons.account_balance_wallet_outlined,
+                  isMonetary: true,
                 ),
 
                 const SizedBox(height: 24),
 
-                // 🚀 Botão Estilizado Neon
+                // 🚀 Botão Estilizado Neon integrado
                 SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
                     onPressed: salvando ? null : salvarCadastro,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF00B4D8),
+                      foregroundColor: const Color(0xFF060B16),
+                      disabledBackgroundColor: const Color(0xFF00B4D8).withValues(alpha: 0.3),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
                     child: salvando
                         ? const SizedBox(
                             height: 24,
                             width: 24,
-                            child: CircularProgressIndicator(color: Colors.black, strokeWidth: 3),
+                            child: CircularProgressIndicator(color: Color(0xFF060B16), strokeWidth: 3),
                           )
                         : const Text(
                             "INICIALIZAR SISTEMA",
-                            style: TextStyle(letterSpacing: 1.5, fontSize: 14),
+                            style: TextStyle(letterSpacing: 1.5, fontSize: 13, fontWeight: FontWeight.bold),
                           ),
                   ),
                 ),
@@ -160,18 +181,23 @@ class _CadastroPageState extends State<CadastroPage> {
     TextInputType teclado = TextInputType.text,
     String? prefixo,
     required IconData icon,
+    bool isMonetary = false,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: TextField(
         controller: controller,
         keyboardType: teclado,
-        style: const TextStyle(color: Colors.white),
+        style: TextStyle(
+          color: Colors.white, 
+          fontSize: 15,
+          fontFamily: isMonetary ? 'monospace' : null,
+        ),
         decoration: InputDecoration(
           labelText: label,
           prefixText: prefixo,
+          prefixStyle: isMonetary ? const TextStyle(color: Color(0xFF00B4D8), fontWeight: FontWeight.bold) : null,
           prefixIcon: Icon(icon, size: 20),
-          // Herda inteligentemente as bordas e preenchimento que calibramos no AstraTheme!
         ),
       ),
     );

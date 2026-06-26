@@ -69,16 +69,16 @@ class Usuario {
     );
   }
 
-  // 🔄 Aliases de compatibilidade adicionados para sincronizar perfeitamente com os Services
+  // 🔄 Aliases de compatibilidade para sincronizar perfeitamente com os Services
   Map<String, dynamic> toJson() => toMap();
   factory Usuario.fromJson(Map<String, dynamic> json) => Usuario.fromMap(json);
 
-  /// 🧠 Parser seguro para decimais (Evita crash silencioso)
+  /// 🧠 Parser seguro para decimais (Evita crash silencioso de JSON)
   static double _parseDouble(dynamic value) {
-    if (value == null) return 0;
+    if (value == null) return 0.0;
     if (value is double) return value;
     if (value is int) return value.toDouble();
-    return double.tryParse(value.toString()) ?? 0;
+    return double.tryParse(value.toString()) ?? 0.0;
   }
 
   /// 🧠 Parser seguro para inteiros

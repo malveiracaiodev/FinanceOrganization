@@ -1,47 +1,44 @@
-name: Compilar APK - Mark I
+name: Compilação Orbital (Finanças Mark I)
 
 on:
   push:
-    branches:
-      - main # 💡 Mude para 'master' se a sua branch principal tiver esse nome
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
 
 jobs:
   build:
+    name: Gerar APK de Produção
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Baixa o código limpo do seu repositório para a máquina virtual
-      - name: Baixar Código
-        uses: actions/checkout@v5
+      - name: 1. Checkout do Código Fonte
+        uses: actions/checkout@v4
 
-      # 2. Configura o Java na versão correta para o ecossistema Android
-      - name: Configurar Java
-        uses: actions/setup-java@v5
+      - name: 2. Configurar Java JDK
+        uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: '17'
 
-      # 3. Configura o Flutter estável no servidor do GitHub
-      - name: Configurar Flutter
+      - name: 3. Configurar Engine do Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          cache: true
 
-      # 4. 🔥 FAXINA OPERACIONAL: Força o compilador a reindexar todas as classes e imports
-      - name: Limpar Cache do Flutter
-        run: flutter clean
-
-      # 5. Baixa as dependências e gera o mapa de libs do pubspec.yaml do zero
-      - name: Instalar Dependências
+      - name: 4. Instalar Dependências
         run: flutter pub get
 
-      # 6. Compila o APK no modo Release pronto para instalação
-      - name: Compilar APK
+      # 🔥 O PULO DO GATO: O GitHub Actions vai gerar os ícones nativos aqui!
+      - name: 5. Injetar Ícones do Aplicativo
+        run: dart run flutter_launcher_icons:generate
+
+      - name: 6. Compilar APK (Release)
         run: flutter build apk --release
 
-      # 7. Coleta o arquivo binário gerado e gera o link de download na aba Actions
-      - name: Disponibilizar APK para Download
+      - name: 7. Fazer Upload do Artefato
         uses: actions/upload-artifact@v4
         with:
-          name: Mark-I-Release-APK
+          name: financas-mark-1-release
           path: build/app/outputs/flutter-apk/app-release.apk

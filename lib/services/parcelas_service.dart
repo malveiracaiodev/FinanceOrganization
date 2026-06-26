@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/parcela.dart';
 
@@ -6,7 +7,10 @@ class ParcelasService {
   static const String _key = 'parcelas';
   static List<Parcela>? _cache;
 
+  // 🪐 Otimizado: Só busca no disco se o cache local estiver vazio
   static Future<List<Parcela>> carregar() async {
+    if (_cache != null) return _cache!;
+
     final prefs = await SharedPreferences.getInstance();
     final data = prefs.getStringList(_key) ?? [];
 
@@ -23,7 +27,7 @@ class ParcelasService {
       _key,
       lista.map((e) => jsonEncode(e.toJson())).toList(),
     );
-    _cache = List.from(lista);
+    _cache = List.from(lista); // Sincroniza o cache imediatamente
   }
 
   static Future<void> adicionarParcela(Parcela p) async {
@@ -91,12 +95,13 @@ class ParcelasService {
     }
   }
 
+  // 📊 CORRIGIDO: Vinculado à propriedade correta 'valorParcela' do seu modelo
   static Future<double> calcularTotalMes() async {
     final lista = await carregar();
     double total = 0;
     for (final p in lista) {
-      if (p.parcelaAtual <= p.totalParcelas) {
-        total += p.valorDoMes;
+      if (p.ativa && p.parcelaAtual <= p.totalParcelas) {
+        total += p.valorParcela; // 🔥 Alterado de 'valorDoMes' para 'valorParcela'
       }
     }
     return total;

@@ -31,10 +31,13 @@ class _DashboardPageState extends State<DashboardPage> {
     _carregarDados();
   }
 
+  // 🔥 Mudamos para público para que a NavegacaoPage ou modais centrais possam forçar o refresh se necessário
   Future<void> _carregarDados() async {
     try {
       final resUsuario = await PreferencesService.carregarUsuario();
       final resControle = await ControleService.carregarControle();
+
+      if (!mounted) return;
 
       setState(() {
         usuario = resUsuario;
@@ -50,15 +53,13 @@ class _DashboardPageState extends State<DashboardPage> {
       });
     } catch (e) {
       debugPrint("Erro ao carregar dados do painel: $e");
-      setState(() => carregando = false);
+      if (mounted) setState(() => carregando = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
-    // Soma correta de Entradas protegendo contra nulos
+    // Soma de Entradas protegendo contra nulos
     final totalEntradas = (usuario?.ganhoFixo ?? 0.0) + (controle?.receitasExtras ?? 0.0);
 
     return Scaffold(
@@ -67,107 +68,138 @@ class _DashboardPageState extends State<DashboardPage> {
       backgroundColor: const Color(0xFF060B16),
       body: FundoCosmico(
         child: carregando
-            ? Center(child: CircularProgressIndicator(color: theme.primaryColor))
+            ? const Center(child: CircularProgressIndicator(color: Color(0xFF00B4D8)))
             : SafeArea(
                 child: Column(
                   children: [
-                    // 🛸 Barra de Topo Executiva
+                    // 🛸 Barra de Topo Executiva Stitch
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.menu, color: Colors.white, size: 26),
+                            icon: const Icon(Icons.notes_rounded, color: Colors.white, size: 28),
                             onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                           ),
                           const Text(
                             "PAINEL GERENCIAL",
                             style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1.5,
+                              color: Color(0xFF00B4D8), // Unificado com o Neon do ecossistema
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 2,
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.notifications_none_outlined, color: Colors.white70, size: 24), // 🔥 Corrigido parâmetro 'icon:' e cor 'white70'
-                            onPressed: () {},
+                            icon: const Icon(Icons.refresh_rounded, color: Colors.white70, size: 24), // Trocado notificação por botão útil de Refresh manual
+                            onPressed: _carregarDados,
                           ),
                         ],
                       ),
                     ),
 
-                    // 🌌 Área de Rolagem do Painel
+                    // 🌌 Área de Rolagem Dinâmica
                     Expanded(
-                      child: SingleChildScrollView(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 10),
-                            
-                            // 💎 CARD PRINCIPAL: SALDO CONSOLIDADO
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0B1424).withValues(alpha: 0.6),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: AstraTheme.primary.withValues(alpha: 0.15)),
+                      child: RefreshIndicator(
+                        color: const Color(0xFF00B4D8),
+                        backgroundColor: const Color(0xFF070D19),
+                        onRefresh: _carregarDados, // Arrastar para baixo atualiza o painel orbital
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 16),
+                              
+                              // 💎 CARD PRINCIPAL: SALDO CONSOLIDADO NEON
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0B1424).withValues(alpha: 0.6),
+                                  borderRadius: BorderRadius.circular(24),
+                                  border: Border.all(color: const Color(0xFF00B4D8).withValues(alpha: 0.2)),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF00B4D8).withValues(alpha: 0.03),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 10),
+                                    )
+                                  ]
+                                ),
+                                child: Column(
+                                  children: [
+                                    const Text(
+                                      "SALDO ATUAL CONSOLIDADO",
+                                      style: TextStyle(
+                                        color: Colors.white38,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 1.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      "R\$ ${saldoReal.toStringAsFixed(2)}",
+                                      style: const TextStyle(
+                                        color: Color(0xFF8CE8FF), // Ciano brilhante para leitura numérica
+                                        fontSize: 38,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: -0.5,
+                                        fontFamily: 'monospace',
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF00B4D8).withValues(alpha: 0.08),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.shield_outlined, color: Color(0xFF00B4D8), size: 14),
+                                          SizedBox(width: 6),
+                                          Text(
+                                            "Ambiente Operacional Seguro",
+                                            style: TextStyle(color: Color(0xFF00B4D8), fontSize: 11, fontWeight: FontWeight.bold),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  ],
+                                ),
                               ),
-                              child: Column(
-                                children: [
-                                  const Text(
-                                    "SALDO ATUAL CONSOLIDADO",
-                                    style: TextStyle(
-                                      color: Colors.white38,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1.5,
+                              
+                              const SizedBox(height: 24),
+                              
+                              // Card informativo secundário de Acúmulo
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF070D19).withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: Colors.white.withValues(alpha: 0.03)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.arrow_upward_rounded, color: Color(0xFF8CE8FF), size: 20),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        "Entradas acumuladas neste ciclo: R\$ ${totalEntradas.toStringAsFixed(2)}",
+                                        style: const TextStyle(color: Colors.white60, fontSize: 13, fontFamily: 'monospace'),
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    "R\$ ${saldoReal.toStringAsFixed(2)}",
-                                    style: const TextStyle(
-                                      color: Color(0xFF8CE8FF),
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: AstraTheme.primary.withValues(alpha: 0.08),
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.shield_outlined, color: AstraTheme.primary, size: 14), // 🔥 Corrigido nome do ícone
-                                        SizedBox(width: 6),
-                                        Text(
-                                          "Ambiente Operacional Seguro",
-                                          style: TextStyle(color: AstraTheme.primary, fontSize: 11, fontWeight: FontWeight.bold),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                            
-                            // Espaço extra para futuras seções (Ex: receitas, despesas previstas, etc)
-                            const SizedBox(height: 20),
-                            Text(
-                              "Entradas acumuladas neste ciclo: R\$ ${totalEntradas.toStringAsFixed(2)}",
-                              style: const TextStyle(color: Colors.white54, fontSize: 12),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),

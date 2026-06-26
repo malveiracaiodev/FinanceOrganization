@@ -12,8 +12,7 @@ class HistoricoMensal {
   });
 
   /// 📊 Resultado líquido do mês (Saldo que sobrou)
-  double get resto =>
-      ganhoFixo + ganhosAdicionais - gastosTotais;
+  double get resto => ganhoFixo + ganhosAdicionais - gastosTotais;
 
   /// 📈 Receita total gerada no ciclo correspondente
   double get receitaTotal => ganhoFixo + ganhosAdicionais;
@@ -37,7 +36,7 @@ class HistoricoMensal {
     }
   }
 
-  /// 🔁 NOVO: Permite edição/cópia com alterações dos meses passados
+  /// 🔁 Permite edição/cópia com alterações dos meses passados
   HistoricoMensal copyWith({
     String? mesAno,
     double? ganhoFixo,
@@ -72,15 +71,15 @@ class HistoricoMensal {
     );
   }
 
-  // 🔄 Aliases de compatibilidade adicionados para sincronizar com o HistoricoService
+  // 🔄 Aliases de compatibilidade para sincronizar com o HistoricoService
   Map<String, dynamic> toJson() => toMap();
   factory HistoricoMensal.fromJson(Map<String, dynamic> json) => HistoricoMensal.fromMap(json);
 
-  /// 🧠 Parser seguro
+  /// 🧠 Parser seguro para decimais (Retorno estrito de double)
   static double _parseDouble(dynamic value) {
-    if (value == null) return 0;
+    if (value == null) return 0.0;
     if (value is double) return value;
     if (value is int) return value.toDouble();
-    return double.tryParse(value.toString()) ?? 0;
+    return double.tryParse(value.toString()) ?? 0.0;
   }
 }

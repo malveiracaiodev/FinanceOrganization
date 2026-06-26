@@ -17,10 +17,10 @@ dependencies:
   # Armazenamento local simples
   shared_preferences: ^2.3.5
 
-  # Abrir links externos (site pessoal)
+  # Abrir links externos
   url_launcher: ^6.3.1
 
-  # Animações (para o texto pulsante Mark I)
+  # Animações do ecossistema e texto pulsante Mark I
   flutter_animate: ^4.5.0
 
 dev_dependencies:
@@ -29,19 +29,20 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
   # Gerador automático de ícones para Android/iOS
-  flutter_launcher_icons: ^0.13.1
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
 
-  # Inclui todos os arquivos dentro da pasta assets/
+  # Mapeamento explícito de recursos do sistema
   assets:
     - assets/
+    - assets/icone.png
 
-# Configuração do ícone do app
-flutter_icons:
-  android: true
+# 🔥 Correção de sintaxe: Ajustado de 'flutter_icons' para 'flutter_launcher_icons'
+flutter_launcher_icons:
+  android: "launcher_icon"
   ios: true
   image_path: "assets/icone.png"
-  adaptive_icon_background: "#000000"   # fundo preto (pode trocar)
+  adaptive_icon_background: "#060B16"   # Fundo escuro oficial da interface cibernética
   adaptive_icon_foreground: "assets/icone.png"

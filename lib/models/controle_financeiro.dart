@@ -4,61 +4,17 @@ class ControleFinanceiro {
   final double despesasPrevistas;
 
   const ControleFinanceiro({
-    required this.receitasExtras,
-    required this.despesas,
-    required this.despesasPrevistas,
+    this.receitasExtras = 0.0,
+    this.despesas = 0.0,
+    this.despesasPrevistas = 0.0,
   });
 
-  /// 💰 Calcula o saldo final do mês injetando o salário base 
-  /// e subtraindo também o total das parcelas vigentes na Mark I.
-  double saldoFinal(double salarioBase, {double totalParcelasDoMes = 0}) {
-    return salarioBase +
-        receitasExtras -
-        despesas -
-        despesasPrevistas -
-        totalParcelasDoMes; // 🔥 Agora o parcelamento reduz o saldo real!
+  /// 🧮 Calcula o saldo final real deduzindo entradas e saídas (Inclui as faturas de parcelas)
+  double saldoFinal(double ganhoFixo, {double totalParcelasDoMes = 0.0}) {
+    return (ganhoFixo + receitasExtras) - (despesas + totalParcelasDoMes);
   }
 
-  /// 🚀 APLICADOR DE VETOR (Conceito Stitch da Imagem 1)
-  /// Permite injetar uma nova transação baseada em sua Magnitude e Vetor de direção.
-  ControleFinanceiro aplicarTransacao({
-    required double magnitude,
-    required String vetor, // 'receita', 'despesa' ou 'prevista'
-  }) {
-    switch (vetor.toLowerCase()) {
-      case 'receita':
-      case 'entrada':
-        return copyWith(receitasExtras: receitasExtras + magnitude);
-      case 'despesa':
-      case 'saida':
-        return copyWith(despesas: despesas + magnitude);
-      case 'prevista':
-        return copyWith(despesasPrevistas: despesasPrevistas + magnitude);
-      default:
-        return this; // Vetor desconhecido, mantém o estado orbital intacto
-    }
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'receitasExtras': receitasExtras,
-      'despesas': despesas,
-      'despesasPrevistas': despesasPrevistas,
-    };
-  }
-
-  factory ControleFinanceiro.fromMap(Map<String, dynamic> map) {
-    return ControleFinanceiro(
-      receitasExtras: _parseDouble(map['receitasExtras']),
-      despesas: _parseDouble(map['despesas']),
-      despesasPrevistas: _parseDouble(map['despesasPrevistas']),
-    );
-  }
-
-  // 🔄 Aliases de compatibilidade para o padrão JSON do Service
-  Map<String, dynamic> toJson() => toMap();
-  factory ControleFinanceiro.fromJson(Map<String, dynamic> json) => ControleFinanceiro.fromMap(json);
-
+  /// 🔁 Imutabilidade: Cria uma cópia com novos dados alterados
   ControleFinanceiro copyWith({
     double? receitasExtras,
     double? despesas,
@@ -71,11 +27,31 @@ class ControleFinanceiro {
     );
   }
 
-  /// 🧠 Mantendo o seu padrão de parser seguro para evitar falhas no JSON
+  /// 💾 Converte para salvar localmente
+  Map<String, dynamic> toMap() {
+    return {
+      'receitasExtras': receitasExtras,
+      'despesas': despesas,
+      'despesasPrevistas': despesasPrevistas,
+    };
+  }
+
+  /// 🔐 Mapeamento reverso com proteção matemática anti-nulo
+  factory ControleFinanceiro.fromMap(Map<String, dynamic> map) {
+    return ControleFinanceiro(
+      receitasExtras: _parseDouble(map['receitasExtras']),
+      despesas: _parseDouble(map['despesas']),
+      despesasPrevistas: _parseDouble(map['despesasPrevistas']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => toMap();
+  factory ControleFinanceiro.fromJson(Map<String, dynamic> json) => ControleFinanceiro.fromMap(json);
+
   static double _parseDouble(dynamic value) {
-    if (value == null) return 0;
+    if (value == null) return 0.0;
     if (value is double) return value;
     if (value is int) return value.toDouble();
-    return double.tryParse(value.toString()) ?? 0;
+    return double.tryParse(value.toString()) ?? 0.0;
   }
 }
