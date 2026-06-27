@@ -36,12 +36,12 @@ class AstraTheme {
 
       // Seus Cards adaptados ao estilo Glassmorphism/Space do Stitch
       cardTheme: CardThemeData(
-        color: surface.withOpacity(0.6), // Ajustado para conversar com a opacidade do painel
+        color: surface.withValues(alpha: 0.6), // Ajustado para conversar com a opacidade do painel
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
           side: BorderSide(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             width: 1,
           ),
         ),
@@ -63,17 +63,17 @@ class AstraTheme {
       // 🛠️ ADICIONADO: Input Decoration global para as telas de lançamento (Imagem 1 do Stitch)
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: surface.withOpacity(0.4),
+        fillColor: surface.withValues(alpha: 0.4),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         labelStyle: const TextStyle(color: Colors.white38, fontSize: 14),
         floatingLabelStyle: const TextStyle(color: primary, fontWeight: FontWeight.bold),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.05)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.05)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),

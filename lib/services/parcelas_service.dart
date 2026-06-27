@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/parcela.dart';
 
@@ -95,13 +94,13 @@ class ParcelasService {
     }
   }
 
-  // 📊 CORRIGIDO: Vinculado à propriedade correta 'valorParcela' do seu modelo
+  // 📊 Vinculado à propriedade correta 'valorParcela' do seu modelo
   static Future<double> calcularTotalMes() async {
     final lista = await carregar();
     double total = 0;
     for (final p in lista) {
       if (p.ativa && p.parcelaAtual <= p.totalParcelas) {
-        total += p.valorParcela; // 🔥 Alterado de 'valorDoMes' para 'valorParcela'
+        total += p.valorParcela;
       }
     }
     return total;

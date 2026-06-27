@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../core/theme/app_theme.dart';
 import '../models/controle_financeiro.dart';
 import '../models/usuario.dart';
 import '../services/controle_service.dart';
@@ -28,10 +27,9 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
-    carregarDados(); // 🔥 CORRIGIDO: Removido o "_" para apontar para a função real
+    carregarDados();
   }
 
-  // 🔥 Mudamos para público para que a NavegacaoPage ou modais centrais possam forçar o refresh se necessário
   Future<void> carregarDados() async {
     try {
       final resUsuario = await PreferencesService.carregarUsuario();
@@ -43,7 +41,6 @@ class _DashboardPageState extends State<DashboardPage> {
         usuario = resUsuario;
         controle = resControle;
         
-        // Calcula o saldo dinâmico baseado nos dados carregados
         final ganhoFixo = resUsuario?.ganhoFixo ?? 0.0;
         final receitasExtras = resControle.receitasExtras;
         final despesas = resControle.despesas;
@@ -59,19 +56,19 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Soma de Entradas protegendo contra nulos
+    final theme = Theme.of(context);
     final totalEntradas = (usuario?.ganhoFixo ?? 0.0) + (controle?.receitasExtras ?? 0.0);
 
     return Scaffold(
       key: _scaffoldKey,
       drawer: AppDrawer(onSelectTab: widget.onSelectTab),
-      backgroundColor: Colors.transparent, // 🔥 CORRIGIDO: Transparente para revelar o FundoCosmico por baixo
+      backgroundColor: Colors.transparent,
       body: FundoCosmico(
         child: SizedBox(
           width: double.infinity,
           height: double.infinity,
           child: carregando
-              ? const Center(child: CircularProgressIndicator(color: Color(0xFF00B4D8)))
+              ? Center(child: CircularProgressIndicator(color: theme.colorScheme.primary))
               : SafeArea(
                   child: Column(
                     children: [
@@ -82,21 +79,21 @@ class _DashboardPageState extends State<DashboardPage> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.notes_rounded, color: Colors.white, size: 28),
+                              icon: Icon(Icons.notes_rounded, color: theme.iconTheme.color ?? Colors.white, size: 28),
                               onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                             ),
-                            const Text(
+                            Text(
                               "PAINEL GERENCIAL",
                               style: TextStyle(
-                                color: Color(0xFF00B4D8), // Unificado com o Neon do ecossistema
+                                color: theme.colorScheme.primary,
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 2,
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.refresh_rounded, color: Colors.white70, size: 24), // Trocado notificação por botão útil de Refresh manual
-                              onPressed: carregarDados, // 🔥 CORRIGIDO: Removido o "_"
+                              icon: Icon(Icons.refresh_rounded, color: theme.iconTheme.color?.withValues(alpha: 0.7) ?? Colors.white70, size: 24),
+                              onPressed: carregarDados,
                             ),
                           ],
                         ),
@@ -105,9 +102,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       // 🌌 Área de Rolagem Dinâmica
                       Expanded(
                         child: RefreshIndicator(
-                          color: const Color(0xFF00B4D8),
-                          backgroundColor: const Color(0xFF070D19),
-                          onRefresh: carregarDados, // 🔥 CORRIGIDO: Removido o "_"
+                          color: theme.colorScheme.primary,
+                          backgroundColor: theme.scaffoldBackgroundColor,
+                          onRefresh: carregarDados,
                           child: SingleChildScrollView(
                             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -121,12 +118,12 @@ class _DashboardPageState extends State<DashboardPage> {
                                   width: double.infinity,
                                   padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF0B1424).withValues(alpha: 0.6),
+                                    color: theme.cardColor.withValues(alpha: 0.6),
                                     borderRadius: BorderRadius.circular(24),
-                                    border: Border.all(color: const Color(0xFF00B4D8).withValues(alpha: 0.2)),
+                                    border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2)),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF00B4D8).withValues(alpha: 0.03),
+                                        color: theme.colorScheme.primary.withValues(alpha: 0.03),
                                         blurRadius: 20,
                                         offset: const Offset(0, 10),
                                       )
@@ -134,10 +131,10 @@ class _DashboardPageState extends State<DashboardPage> {
                                   ),
                                   child: Column(
                                     children: [
-                                      const Text(
+                                      Text(
                                         "SALDO ATUAL CONSOLIDADO",
-                                        style: TextStyle(
-                                          color: Colors.white38,
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.4) ?? Colors.white38,
                                           fontSize: 11,
                                           fontWeight: FontWeight.bold,
                                           letterSpacing: 1.5,
@@ -146,8 +143,8 @@ class _DashboardPageState extends State<DashboardPage> {
                                       const SizedBox(height: 12),
                                       Text(
                                         "R\$ ${saldoReal.toStringAsFixed(2)}",
-                                        style: const TextStyle(
-                                          color: Color(0xFF8CE8FF), // Ciano brilhante para leitura numérica
+                                        style: theme.textTheme.displayLarge?.copyWith(
+                                          color: theme.colorScheme.secondary,
                                           fontSize: 38,
                                           fontWeight: FontWeight.bold,
                                           letterSpacing: -0.5,
@@ -158,17 +155,21 @@ class _DashboardPageState extends State<DashboardPage> {
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFF00B4D8).withValues(alpha: 0.08),
+                                          color: theme.colorScheme.primary.withValues(alpha: 0.08),
                                           borderRadius: BorderRadius.circular(20),
                                         ),
-                                        child: const Row(
+                                        child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Icon(Icons.shield_outlined, color: Color(0xFF00B4D8), size: 14),
-                                            SizedBox(width: 6),
+                                            Icon(Icons.shield_outlined, color: theme.colorScheme.primary, size: 14),
+                                            const SizedBox(width: 6),
                                             Text(
                                               "Ambiente Operacional Seguro",
-                                              style: TextStyle(color: Color(0xFF00B4D8), fontSize: 11, fontWeight: FontWeight.bold),
+                                              style: TextStyle(
+                                                color: theme.colorScheme.primary, 
+                                                fontSize: 11, 
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -184,18 +185,22 @@ class _DashboardPageState extends State<DashboardPage> {
                                   width: double.infinity,
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF070D19).withValues(alpha: 0.5),
+                                    color: theme.scaffoldBackgroundColor.withValues(alpha: 0.5),
                                     borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: Colors.white.withValues(alpha: 0.03)),
+                                    border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
                                   ),
                                   child: Row(
                                     children: [
-                                      const Icon(Icons.arrow_upward_rounded, color: Color(0xFF8CE8FF), size: 20),
+                                      Icon(Icons.arrow_upward_rounded, color: theme.colorScheme.secondary, size: 20),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Text(
                                           "Entradas acumuladas neste ciclo: R\$ ${totalEntradas.toStringAsFixed(2)}",
-                                          style: const TextStyle(color: Colors.white60, fontSize: 13, fontFamily: 'monospace'),
+                                          style: theme.textTheme.bodyMedium?.copyWith(
+                                            color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                                            fontSize: 13,
+                                            fontFamily: 'monospace',
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -209,6 +214,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ],
                   ),
                 ),
+          ),
         ),
       ),
     );

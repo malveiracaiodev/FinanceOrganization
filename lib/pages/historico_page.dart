@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../core/theme/app_theme.dart';
 import '../models/historico_mensal.dart';
 import '../services/historico_service.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/fundo_cosmico.dart';
 
 class HistoricoPage extends StatefulWidget {
-  final Function(int)? onSelectTab; // Callback para controle integrado da navegação
+  final Function(int)? onSelectTab;
 
   const HistoricoPage({super.key, this.onSelectTab});
 
@@ -84,16 +83,13 @@ class _HistoricoPageState extends State<HistoricoPage> {
     final novoFixo = double.tryParse(ganhoController.text.replaceAll(',', '.')) ?? item.ganhoFixo;
     final novoAdicional = double.tryParse(adicionaisController.text.replaceAll(',', '.')) ?? item.ganhosAdicionais;
     final novoGasto = double.tryParse(gastosController.text.replaceAll(',', '.')) ?? item.gastosTotais;
-    
-    // 🔥 CORRIGIDO: Calculando o saldo líquido real do fechamento para salvar corretamente
-    final novoResto = (novoFixo + novoAdicional) - novoGasto;
 
+    // 🔥 CORRIGIDO: Instanciação limpa e em perfeita sincronia com o seu modelo (getters)
     final atualizado = HistoricoMensal(
       mesAno: item.mesAno,
       ganhoFixo: novoFixo,
       ganhosAdicionais: novoAdicional,
       gastosTotais: novoGasto,
-      resto: novoResto, // Vinculado matematicamente
     );
 
     await HistoricoService.atualizarMes(index, atualizado);
@@ -130,110 +126,111 @@ class _HistoricoPageState extends State<HistoricoPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
+      backgroundColor: Colors.transparent, // 🔥 Revela o FundoCosmico por baixo
       drawer: AppDrawer(onSelectTab: widget.onSelectTab),
       body: FundoCosmico(
-        child: SafeArea(
-          child: carregando
-              ? const Center(child: CircularProgressIndicator(color: Color(0xFF00B4D8)))
-              : Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Barra Superior Executiva
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.notes_rounded, color: Colors.white, size: 28),
-                            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                          ),
-                          const Text(
-                            "HISTÓRICO DE FECHAMENTOS",
-                            style: TextStyle(
-                              color: Color(0xFF00B4D8),
-                              fontSize: 11,
-                              letterSpacing: 2,
-                              fontWeight: FontWeight.bold,
+        child: SizedBox(
+          width: double.infinity,
+          height: double.infinity,
+          child: SafeArea(
+            child: carregando
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF00B4D8)))
+                : Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.notes_rounded, color: Colors.white, size: 28),
+                              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                             ),
-                          ),
-                          const SizedBox(width: 48),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      
-                      const Text(
-                        "Arquivo Orbital",
-                        style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
-                      ),
-                      const Text(
-                        "Relatórios consolidados de ciclos passados.",
-                        style: TextStyle(color: Colors.white54, fontSize: 13),
-                      ),
-                      const SizedBox(height: 20),
+                            const Text(
+                              "HISTÓRICO DE FECHAMENTOS",
+                              style: TextStyle(
+                                color: Color(0xFF00B4D8),
+                                fontSize: 11,
+                                letterSpacing: 2,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 48),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        
+                        const Text(
+                          "Arquivo Orbital",
+                          style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                        ),
+                        const Text(
+                          "Relatórios consolidados de ciclos passados.",
+                          style: TextStyle(color: Colors.white54, fontSize: 13),
+                        ),
+                        const SizedBox(height: 20),
 
-                      // Lista do Histórico Mensal
-                      Expanded(
-                        child: historico.isEmpty
-                            ? const Center(
-                                child: Text(
-                                  "Nenhum registro em arquivo de auditoria.",
-                                  style: TextStyle(color: Colors.white38),
-                                ),
-                              )
-                            : ListView.builder(
-                                itemCount: historico.length,
-                                physics: const BouncingScrollPhysics(),
-                                itemBuilder: (context, index) {
-                                  final mes = historico[index];
-                                  final positivo = mes.resto >= 0;
-                                  
-                                  // Paleta Neon Stitch UI para balanço
-                                  final corBalanco = positivo ? const Color(0xFF8CE8FF) : const Color(0xFFFF6B6B);
+                        Expanded(
+                          child: historico.isEmpty
+                              ? const Center(
+                                  child: Text(
+                                    "Nenhum registro em arquivo de auditoria.",
+                                    style: TextStyle(color: Colors.white38),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  itemCount: historico.length,
+                                  physics: const BouncingScrollPhysics(),
+                                  itemBuilder: (context, index) {
+                                    final mes = historico[index];
+                                    final positivo = mes.resto >= 0;
+                                    final corBalanco = positivo ? const Color(0xFF8CE8FF) : const Color(0xFFFF6B6B);
 
-                                  return Container(
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF0B1424).withValues(alpha: 0.6), // Sintaxe moderna
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(color: const Color(0xFF1A2740)),
-                                    ),
-                                    child: ListTile(
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      title: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            mes.mesAno,
-                                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-                                          ),
-                                          Text(
-                                            "R\$ ${mes.resto.toStringAsFixed(2)}",
-                                            style: TextStyle(color: corBalanco, fontWeight: FontWeight.bold, fontSize: 16, fontFamily: 'monospace'),
-                                          ),
-                                        ],
+                                    return Container(
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF0B1424).withValues(alpha: 0.6),
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(color: const Color(0xFF1A2740)),
                                       ),
-                                      subtitle: Padding(
-                                        padding: const EdgeInsets.only(top: 8.0),
-                                        child: Text(
-                                          "Fixo: R\$ ${mes.ganhoFixo.toStringAsFixed(2)}\n"
-                                          "Extras: R\$ ${mes.ganhosAdicionais.toStringAsFixed(2)}\n"
-                                          "Gastos: R\$ ${mes.gastosTotais.toStringAsFixed(2)}",
-                                          style: const TextStyle(color: Colors.white54, fontSize: 13, height: 1.4, fontFamily: 'monospace'),
+                                      child: ListTile(
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                        title: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              mes.mesAno,
+                                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                                            ),
+                                            Text(
+                                              "R\$ ${mes.resto.toStringAsFixed(2)}",
+                                              style: TextStyle(color: corBalanco, fontWeight: FontWeight.bold, fontSize: 16, fontFamily: 'monospace'),
+                                            ),
+                                          ],
+                                        ),
+                                        subtitle: Padding(
+                                          padding: const EdgeInsets.only(top: 8.0),
+                                          child: Text(
+                                            "Fixo: R\$ ${mes.ganhoFixo.toStringAsFixed(2)}\n"
+                                            "Extras: R\$ ${mes.ganhosAdicionais.toStringAsFixed(2)}\n"
+                                            "Gastos: R\$ ${mes.gastosTotais.toStringAsFixed(2)}",
+                                            style: const TextStyle(color: Colors.white54, fontSize: 13, height: 1.4, fontFamily: 'monospace'),
+                                          ),
+                                        ),
+                                        trailing: IconButton(
+                                          icon: const Icon(Icons.edit_note_rounded, color: Color(0xFF00B4D8), size: 28),
+                                          onPressed: () => editarMes(index),
                                         ),
                                       ),
-                                      trailing: IconButton(
-                                        icon: const Icon(Icons.edit_note_rounded, color: Color(0xFF00B4D8), size: 28),
-                                        onPressed: () => editarMes(index),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-                    ],
+                                    );
+                                  },
+                                ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+          ),
         ),
       ),
     );

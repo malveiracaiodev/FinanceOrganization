@@ -4,7 +4,7 @@ import '../core/theme/app_theme.dart';
 import '../services/preferences_service.dart';
 import '../services/controle_service.dart';
 import '../pages/navegacao_page.dart'; // 🔥 IMPORT DA NOVA TELA DE NAVEGAÇÃO
-import 'main_hub_page.dart'; // 🔥 IMPORT DA NOVA TELA PRINCIPAL
+// 🔥 IMPORT DA NOVA TELA PRINCIPAL
 import 'cadastro_page.dart';
 import '../widgets/fundo_cosmico.dart'; 
 

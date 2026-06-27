@@ -120,14 +120,13 @@ class ParcelasPageState extends State<ParcelasPage> {
                     id: DateTime.now().millisecondsSinceEpoch.toString(),
                     descricao: desc,
                     valorParcela: val,
-                    valorTotal: val * tot, // 🔥 CORRIGIDO: Inserido o valorTotal exigido pelo seu modelo
+                    valorTotal: val * tot, 
                     parcelaAtual: 1,
                     totalParcelas: tot,
                     ativa: true,
                   );
 
-                  // 🔥 ATENÇÃO: Se o método no seu ParcelasService tiver outro nome, ajuste aqui:
-                  await ParcelasService.salvarParcela(nova); 
+                  await ParcelasService.salvarParcelas(nova); // 🔥 Sincronizado no plural com a service
                   
                   if (!context.mounted) return;
                   Navigator.pop(context);
@@ -146,7 +145,7 @@ class ParcelasPageState extends State<ParcelasPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Colors.transparent, 
+      backgroundColor: Colors.transparent, // 🔥 Deixa transparente para mostrar o FundoCosmico
       drawer: AppDrawer(onSelectTab: widget.onSelectTab),
       body: FundoCosmico(
         child: SizedBox(
@@ -269,7 +268,6 @@ class ParcelasPageState extends State<ParcelasPage> {
                                                 ),
                                               ],
                                             ),
-                                            // 🔥 CORRIGIDO: String fechada e parâmetro onPressed adicionado corretamente
                                             IconButton(
                                               tooltip: "Remover Parcelamento",
                                               icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 22),
