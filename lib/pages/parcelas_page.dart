@@ -120,12 +120,16 @@ class ParcelasPageState extends State<ParcelasPage> {
                     id: DateTime.now().millisecondsSinceEpoch.toString(),
                     descricao: desc,
                     valorParcela: val,
+                    valorTotal: val * tot, // 🔥 CORRIGIDO: Inserido o valorTotal exigido pelo seu modelo
                     parcelaAtual: 1,
                     totalParcelas: tot,
                     ativa: true,
                   );
 
-                  await ParcelasService.salvarParcela(nova);
+                  // 🔥 ATENÇÃO: Se o método no seu ParcelasService tiver outro nome, ajuste aqui:
+                  await ParcelasService.salvarParcela(nova); 
+                  
+                  if (!context.mounted) return;
                   Navigator.pop(context);
                   await carregar();
                 }
@@ -140,12 +144,10 @@ class ParcelasPageState extends State<ParcelasPage> {
   
   @override
   Widget build(BuildContext context) {
-    // 🔥 Mudamos o Scaffold para TRANSPARENTE. Se o Scaffold tiver cor de fundo, ele cobre o FundoCosmico!
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Colors.transparent, 
       drawer: AppDrawer(onSelectTab: widget.onSelectTab),
-      // 🔥 O FundoCosmico agora fica por fora de TUDO no body, esticado no tamanho máximo da tela
       body: FundoCosmico(
         child: SizedBox(
           width: double.infinity,
@@ -267,5 +269,26 @@ class ParcelasPageState extends State<ParcelasPage> {
                                                 ),
                                               ],
                                             ),
+                                            // 🔥 CORRIGIDO: String fechada e parâmetro onPressed adicionado corretamente
                                             IconButton(
-                                              tooltip: "Remover
+                                              tooltip: "Remover Parcelamento",
+                                              icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 22),
+                                              onPressed: () => excluir(p.id),
+                                            ),
+                                          ],
+                                        )
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
