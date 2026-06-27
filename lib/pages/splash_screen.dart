@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_theme.dart';
 import '../services/preferences_service.dart';
 import '../services/controle_service.dart';
-
+import '../pages/navegacao_page.dart'; // 🔥 IMPORT DA NOVA TELA DE NAVEGAÇÃO
 import 'main_hub_page.dart'; // 🔥 IMPORT DA NOVA TELA PRINCIPAL
 import 'cadastro_page.dart';
 import '../widgets/fundo_cosmico.dart'; 
@@ -86,12 +86,13 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
-  // 🚀 ROTA ATUALIZADA: Direciona para a MainHubPage como o portal de entrada do app
+// 🚀 ROTA CORRIGIDA: Agora direciona para a central de abas do aplicativo!
   void _goToMainHub() {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => const MainHubPage(),
+        // Substitua 'NavegacaoPage()' pelo nome EXATO da classe que controla suas abas
+        builder: (_) => const NavegacaoPage(), 
       ),
     );
   }

@@ -32,7 +32,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // 🔥 Mudamos para público para que a NavegacaoPage ou modais centrais possam forçar o refresh se necessário
-  Future<void> _carregarDados() async {
+  Future<void> carregarDados() async {
     try {
       final resUsuario = await PreferencesService.carregarUsuario();
       final resControle = await ControleService.carregarControle();

@@ -12,19 +12,108 @@ class NavegacaoPage extends StatefulWidget {
 class _NavegacaoPageState extends State<NavegacaoPage> {
   int _currentIndex = 0;
 
-  // 🔥 Método público ou gatilho interno para forçar a atualização de estado entre as abas
   void _mudarAbaExterna(int index) {
     setState(() {
       _currentIndex = index;
     });
   }
 
+  /// 🔥 CENTRAL DE COMANDOS: Abre o painel inferior para lançar novos dados
+  void _abrirPainelLancamento(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF070D19),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  "NOVA OPERAÇÃO OTIMIZADA",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Botão de Adicionar Ganho
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: Colors.greenAccent,
+                    child: Icon(Icons.arrow_upward_rounded, color: Color(0xFF060B16)),
+                  ),
+                  title: const Text("Registrar Receita / Ganho", style: TextStyle(color: Colors.white)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    // TODO: Chamar o formulário ou dialog do ControleService para Receita
+                    debugPrint("Abre formulário de Receita");
+                  },
+                ),
+                const Divider(color: Colors.white10),
+                
+                // Botão de Adicionar Gasto
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: Colors.redAccent,
+                    child: Icon(Icons.arrow_downward_rounded, color: Color(0xFF060B16)),
+                  ),
+                  title: const Text("Registrar Despesa / Gasto", style: TextStyle(color: Colors.white)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    // TODO: Chamar o formulário ou dialog do ControleService para Despesa
+                    debugPrint("Abre formulário de Despesa");
+                  },
+                ),
+                const Divider(color: Colors.white10),
+                
+                // Botão de Adicionar Contrato/Parcela
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: Color(0xFF00B4D8),
+                    child: Icon(Icons.credit_card_rounded, color: Color(0xFF060B16)),
+                  ),
+                  title: const Text("Novo Contrato Parcelado", style: TextStyle(color: Colors.white)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    // Move o usuário para a aba de parcelas e pode abrir o criador
+                    _mudarAbaExterna(1);
+                    debugPrint("Abre formulário de Parcela");
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Definimos as telas passando o callback dinamicamente para sincronizar o Drawer lateral
     final List<Widget> telas = [
-      DashboardPage(onSelectTab: _mudarAbaExterna), // Aba 0
-      ParcelasPage(onSelectTab: _mudarAbaExterna),  // Aba 1
+      DashboardPage(onSelectTab: _mudarAbaExterna), 
+      ParcelasPage(onSelectTab: _mudarAbaExterna),  
       const Center(child: Text("STATS EM DESENVOLVIMENTO", style: TextStyle(color: Colors.white54))),
       const Center(child: Text("CONFIGURAÇÕES", style: TextStyle(color: Colors.white54))),
     ];
@@ -46,22 +135,19 @@ class _NavegacaoPageState extends State<NavegacaoPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildBottomActionItem(index: 0, icone: Icons.rocket_launch_rounded, label: "Dashboard"), // Ícone espacial Stitch
+                _buildBottomActionItem(index: 0, icone: Icons.rocket_launch_rounded, label: "Dashboard"), 
                 _buildBottomActionItem(index: 1, icone: Icons.credit_card_rounded, label: "Contratos"),
                 
-                // ➕ Botão Central de Nova Operação Estilo Stitch Neon
+                // ➕ Botão Central Conectado com o Modal Operacional
                 GestureDetector(
-                  onTap: () {
-                    // 🔥 Chamar modal de lançamentos (Receitas/Despesas/Parcelas) futuramente
-                    debugPrint("🔥 Abrindo central de comandos de novos lançamentos...");
-                  },
+                  onTap: () => _abrirPainelLancamento(context), // 🔥 CONECTADO!
                   child: Container(
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF060B16), // Fundo profundo
+                      color: const Color(0xFF060B16), 
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFF00B4D8), width: 2), // Borda Neon Ciano Stitch
+                      border: Border.all(color: const Color(0xFF00B4D8), width: 2), 
                       boxShadow: [
                         BoxShadow(
                           color: const Color(0xFF00B4D8).withValues(alpha: 0.4), 
@@ -96,7 +182,7 @@ class _NavegacaoPageState extends State<NavegacaoPage> {
           children: [
             Icon(
               icone, 
-              color: ativo ? const Color(0xFF00B4D8) : Colors.white38, // Centralizado na paleta azul ciano
+              color: ativo ? const Color(0xFF00B4D8) : Colors.white38, 
               size: 22,
             ),
             const SizedBox(height: 4),
