@@ -18,7 +18,7 @@ class _NavegacaoPageState extends State<NavegacaoPage> {
     });
   }
 
-  /// 🔥 CENTRAL DE COMANDOS: Abre o painel inferior para lançar novos dados
+  /// 🛸 CENTRAL DE COMANDOS: Abre o painel inferior para lançar novos dados
   void _abrirPainelLancamento(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -140,7 +140,7 @@ class _NavegacaoPageState extends State<NavegacaoPage> {
                 
                 // ➕ Botão Central Conectado com o Modal Operacional
                 GestureDetector(
-                  onTap: () => _abrirPainelLancamento(context), // 🔥 CONECTADO!
+                  onTap: () => _abrirPainelLancamento(context), 
                   child: Container(
                     width: 48,
                     height: 48,
@@ -150,6 +150,7 @@ class _NavegacaoPageState extends State<NavegacaoPage> {
                       border: Border.all(color: const Color(0xFF00B4D8), width: 2), 
                       boxShadow: [
                         BoxShadow(
+                          // 💡 LINHA 84 CORRIGIDA AQUI:
                           color: const Color(0xFF00B4D8).withValues(alpha: 0.4), 
                           blurRadius: 10, 
                           offset: const Offset(0, 2),
