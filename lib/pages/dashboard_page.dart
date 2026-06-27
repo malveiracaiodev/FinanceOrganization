@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../models/controle_financeiro.dart';
 import '../models/usuario.dart';
 import '../services/controle_service.dart';
@@ -72,7 +71,6 @@ class _DashboardPageState extends State<DashboardPage> {
               : SafeArea(
                   child: Column(
                     children: [
-                      // 🛸 Barra de Topo Executiva Stitch
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         child: Row(
@@ -92,14 +90,16 @@ class _DashboardPageState extends State<DashboardPage> {
                               ),
                             ),
                             IconButton(
-                              icon: Icon(Icons.refresh_rounded, color: (theme.iconTheme.color ?? Colors.white).withOpacity(0.7), size: 24),
+                              icon: Icon(
+                                Icons.refresh_rounded,
+                                color: (theme.iconTheme.color ?? Colors.white).withAlpha((0.7 * 255).round()),
+                                size: 24,
+                              ),
                               onPressed: carregarDados,
                             ),
                           ],
                         ),
                       ),
-
-                      // 🌌 Área de Rolagem Dinâmica
                       Expanded(
                         child: RefreshIndicator(
                           color: theme.colorScheme.primary,
@@ -112,18 +112,16 @@ class _DashboardPageState extends State<DashboardPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const SizedBox(height: 16),
-                                
-                                // 💎 CARD PRINCIPAL: SALDO CONSOLIDADO NEON
                                 Container(
                                   width: double.infinity,
                                   padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
                                   decoration: BoxDecoration(
-                                    color: theme.cardColor.withOpacity(0.6),
+                                    color: theme.cardColor.withValues(alpha: 0.6),
                                     borderRadius: BorderRadius.circular(24),
-                                    border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
+                                    border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2)),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: theme.colorScheme.primary.withOpacity(0.03),
+                                        color: theme.colorScheme.primary.withValues(alpha: 0.03),
                                         blurRadius: 20,
                                         offset: const Offset(0, 10),
                                       )
@@ -134,7 +132,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                       Text(
                                         "SALDO ATUAL CONSOLIDADO",
                                         style: theme.textTheme.bodySmall?.copyWith(
-                                          color: (theme.textTheme.bodySmall?.color ?? Colors.white).withOpacity(0.4),
+                                          color: (theme.textTheme.bodySmall?.color ?? Colors.white).withValues(alpha: 0.4),
                                           fontSize: 11,
                                           fontWeight: FontWeight.bold,
                                           letterSpacing: 1.5,
@@ -155,7 +153,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                                         decoration: BoxDecoration(
-                                          color: theme.colorScheme.primary.withOpacity(0.08),
+                                          color: theme.colorScheme.primary.withValues(alpha: 0.08),
                                           borderRadius: BorderRadius.circular(20),
                                         ),
                                         child: Row(
@@ -177,17 +175,14 @@ class _DashboardPageState extends State<DashboardPage> {
                                     ],
                                   ),
                                 ),
-                                
                                 const SizedBox(height: 24),
-                                
-                                // Card informativo secundário de Acúmulo
                                 Container(
                                   width: double.infinity,
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: theme.scaffoldBackgroundColor.withOpacity(0.5),
+                                    color: theme.scaffoldBackgroundColor.withValues(alpha: 0.5),
                                     borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: theme.dividerColor.withOpacity(0.2)),
+                                    border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
                                   ),
                                   child: Row(
                                     children: [
@@ -197,7 +192,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                         child: Text(
                                           "Entradas acumuladas neste ciclo: R\$ ${totalEntradas.toStringAsFixed(2)}",
                                           style: theme.textTheme.bodyMedium?.copyWith(
-                                            color: (theme.textTheme.bodyMedium?.color ?? Colors.white).withOpacity(0.6),
+                                            color: (theme.textTheme.bodyMedium?.color ?? Colors.white).withValues(alpha: 0.6),
                                             fontSize: 13,
                                             fontFamily: 'monospace',
                                           ),
@@ -216,7 +211,6 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
           ),
         ),
-      ),
-    );
+      );
   }
 }

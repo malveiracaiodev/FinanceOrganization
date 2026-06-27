@@ -65,8 +65,7 @@ class _NavegacaoPageState extends State<NavegacaoPage> {
                   ),
                   title: const Text("Registrar Receita / Ganho", style: TextStyle(color: Colors.white)),
                   onTap: () {
-                    Navigator.pop(context);
-                    // TODO: Chamar o formulário ou dialog do ControleService para Receita
+                    Navigator.pop(context);            
                     debugPrint("Abre formulário de Receita");
                   },
                 ),
@@ -81,7 +80,6 @@ class _NavegacaoPageState extends State<NavegacaoPage> {
                   title: const Text("Registrar Despesa / Gasto", style: TextStyle(color: Colors.white)),
                   onTap: () {
                     Navigator.pop(context);
-                    // TODO: Chamar o formulário ou dialog do ControleService para Despesa
                     debugPrint("Abre formulário de Despesa");
                   },
                 ),
