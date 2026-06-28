@@ -38,6 +38,7 @@ flutter:
   assets:
     - assets/
     - assets/icone.png
+    - assets/meu_logotipo.png
 
 # 🔥 Correção de sintaxe: Ajustado de 'flutter_icons' para 'flutter_launcher_icons'
 flutter_launcher_icons:

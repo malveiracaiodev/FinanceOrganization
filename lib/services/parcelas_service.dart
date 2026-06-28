@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/parcela.dart';
 
@@ -10,23 +11,40 @@ class ParcelasService {
   static Future<List<Parcela>> carregar() async {
     if (_cache != null) return _cache!;
 
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getStringList(_key) ?? [];
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final data = prefs.getStringList(_key) ?? [];
 
-    _cache = data
-        .map((e) => Parcela.fromJson(jsonDecode(e) as Map<String, dynamic>))
-        .toList();
+      final List<Parcela> listaValida = [];
+      
+      for (final item in data) {
+        try {
+          final Map<String, dynamic> map = jsonDecode(item) as Map<String, dynamic>;
+          listaValida.add(Parcela.fromJson(map));
+        } catch (innerError) {
+          // Se uma única parcela der erro (R8/ProGuard), ignora ela e não quebra a lista toda
+          debugPrint("Erro ao desserializar uma parcela individual: $innerError");
+        }
+      }
 
-    return _cache!;
+      _cache = listaValida;
+      return _cache!;
+    } catch (e) {
+      debugPrint("Erro crítico ao carregar lista de parcelas: $e");
+      return [];
+    }
   }
 
   static Future<void> salvar(List<Parcela> lista) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-      _key,
-      lista.map((e) => jsonEncode(e.toJson())).toList(),
-    );
-    _cache = List.from(lista); // Sincroniza o cache imediatamente
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final List<String> dadosMapeados = lista.map((e) => jsonEncode(e.toJson())).toList();
+      
+      await prefs.setStringList(_key, dadosMapeados);
+      _cache = List.from(lista); // Sincroniza o cache imediatamente de forma segura
+    } catch (e) {
+      debugPrint("Erro ao salvar parcelas no SharedPreferences: $e");
+    }
   }
 
   static Future<void> adicionarParcela(Parcela p) async {

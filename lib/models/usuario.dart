@@ -43,7 +43,7 @@ class Usuario {
     );
   }
 
-  /// 💾 Serialização para persistência orbital
+  /// 💾 Serialização para persistência orbital (Chaves protegidas e estáticas)
   Map<String, dynamic> toMap() {
     return {
       'nome': nome,

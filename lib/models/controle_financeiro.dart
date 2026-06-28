@@ -27,7 +27,7 @@ class ControleFinanceiro {
     );
   }
 
-  /// 💾 Converte para salvar localmente
+  /// 💾 Converte para salvar localmente (Chaves em String explícitas para o ProGuard)
   Map<String, dynamic> toMap() {
     return {
       'receitasExtras': receitasExtras,

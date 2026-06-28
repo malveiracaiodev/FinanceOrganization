@@ -3,7 +3,6 @@ import '../models/controle_financeiro.dart';
 import '../models/usuario.dart';
 import '../services/controle_service.dart';
 import '../services/preferences_service.dart';
-import '../widgets/app_drawer.dart';
 import '../widgets/fundo_cosmico.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -16,8 +15,6 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  
   bool carregando = true;
   Usuario? usuario;
   ControleFinanceiro? controle;
@@ -31,186 +28,219 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> carregarDados() async {
     try {
+      await Future.delayed(const Duration(milliseconds: 100));
+
       final resUsuario = await PreferencesService.carregarUsuario();
       final resControle = await ControleService.carregarControle();
 
       if (!mounted) return;
 
       setState(() {
-        usuario = resUsuario;
-        controle = resControle;
-        
-        final ganhoFixo = resUsuario?.ganhoFixo ?? 0.0;
-        final receitasExtras = resControle.receitasExtras;
-        final despesas = resControle.despesas;
-        
-        saldoReal = (ganhoFixo + receitasExtras) - despesas;
-        carregando = false;
-      });
+  usuario = resUsuario;
+  controle = resControle;
+  
+  final ganhoFixo = resUsuario?.ganhoFixo ?? 0.0;
+  // ✨ CORREÇÃO DA LINHA 44: Como resControle nunca é nulo, chamamos o método diretamente de forma limpa
+  saldoReal = resControle.saldoFinal(ganhoFixo);
+  
+  carregando = false;
+});
     } catch (e) {
-      debugPrint("Erro ao carregar dados do painel: $e");
-      if (mounted) setState(() => carregando = false);
+      if (mounted) {
+        setState(() {
+          carregando = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    const Color corBorda = Color(0xFF00B4D8);
+    const Color corTextoAlta = Colors.white;
+    const Color corTextoMedia = Colors.white70;
+
     final totalEntradas = (usuario?.ganhoFixo ?? 0.0) + (controle?.receitasExtras ?? 0.0);
+    final totalSaidas = controle?.despesas ?? 0.0;
 
     return Scaffold(
-      key: _scaffoldKey,
-      drawer: AppDrawer(onSelectTab: widget.onSelectTab),
       backgroundColor: Colors.transparent,
       body: FundoCosmico(
-        child: SizedBox(
-          width: double.infinity,
-          height: double.infinity,
-          child: carregando
-              ? Center(child: CircularProgressIndicator(color: theme.colorScheme.primary))
-              : SafeArea(
+        child: carregando
+            ? const Center(child: CircularProgressIndicator(color: corBorda))
+            : RefreshIndicator(
+                onRefresh: carregarDados,
+                backgroundColor: const Color(0xFF0A1128),
+                color: corBorda,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(24.0),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      // Boas-vindas
+                      Text(
+                        "BEM-VINDO, COMANDANTE",
+                        style: TextStyle(
+                          color: corBorda.withValues(alpha: 0.8),
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        usuario?.nomeCompleto.toUpperCase() ?? "PILOTO DA MARK I",
+                        style: const TextStyle(
+                          color: corTextoAlta,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Card de Saldo
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0A1128),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: corBorda.withValues(alpha: 0.2)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            IconButton(
-                              icon: Icon(Icons.notes_rounded, color: theme.iconTheme.color ?? Colors.white, size: 28),
-                              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                            const Text(
+                              "SALDO EM CARTEIRA ORBITAL",
+                              style: TextStyle(color: corTextoMedia, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1),
                             ),
+                            const SizedBox(height: 12),
                             Text(
-                              "PAINEL GERENCIAL",
-                              style: TextStyle(
-                                color: theme.colorScheme.primary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 2,
+                              "R\$ ${saldoReal.toStringAsFixed(2)}",
+                              style: const TextStyle(
+                                color: corBorda,
+                                fontSize: 32,
+                                fontWeight: FontWeight.w900,
+                                fontFamily: 'monospace',
                               ),
                             ),
-                            IconButton(
-                              icon: Icon(
-                                Icons.refresh_rounded,
-                                color: (theme.iconTheme.color ?? Colors.white).withAlpha((0.7 * 255).round()),
-                                size: 24,
-                              ),
-                              onPressed: carregarDados,
+                            const SizedBox(height: 8),
+                            Text(
+                              "Património Líquido Atualizado",
+                              style: TextStyle(color: corTextoMedia.withValues(alpha: 0.6), fontSize: 12),
                             ),
                           ],
                         ),
                       ),
-                      Expanded(
-                        child: RefreshIndicator(
-                          color: theme.colorScheme.primary,
-                          backgroundColor: theme.scaffoldBackgroundColor,
-                          onRefresh: carregarDados,
-                          child: SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 16),
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
-                                  decoration: BoxDecoration(
-                                    color: theme.cardColor.withValues(alpha: 0.6),
-                                    borderRadius: BorderRadius.circular(24),
-                                    border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2)),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: theme.colorScheme.primary.withValues(alpha: 0.03),
-                                        blurRadius: 20,
-                                        offset: const Offset(0, 10),
-                                      )
-                                    ],
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        "SALDO ATUAL CONSOLIDADO",
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: (theme.textTheme.bodySmall?.color ?? Colors.white).withValues(alpha: 0.4),
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: 1.5,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        "R\$ ${saldoReal.toStringAsFixed(2)}",
-                                        style: theme.textTheme.displayLarge?.copyWith(
-                                          color: theme.colorScheme.secondary,
-                                          fontSize: 38,
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: -0.5,
-                                          fontFamily: 'monospace',
-                                        ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: theme.colorScheme.primary.withValues(alpha: 0.08),
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(Icons.shield_outlined, color: theme.colorScheme.primary, size: 14),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              "Ambiente Operacional Seguro",
-                                              style: TextStyle(
-                                                color: theme.colorScheme.primary, 
-                                                fontSize: 11, 
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      )
-                                    ],
-                                  ),
+                      const SizedBox(height: 20),
+
+                      // Atalhos Rápidos
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => widget.onSelectTab?.call(1),
+                              icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
+                              label: const Text("FLUXO"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0A1128),
+                                foregroundColor: corBorda,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  // 🛡️ CORREÇÃO LN 150: Modificado de Border.all para BorderSide genuíno
+                                  side: BorderSide(color: corBorda.withValues(alpha: 0.15)),
                                 ),
-                                const SizedBox(height: 24),
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: theme.scaffoldBackgroundColor.withValues(alpha: 0.5),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.arrow_upward_rounded, color: theme.colorScheme.secondary, size: 20),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Text(
-                                          "Entradas acumuladas neste ciclo: R\$ ${totalEntradas.toStringAsFixed(2)}",
-                                          style: theme.textTheme.bodyMedium?.copyWith(
-                                            color: (theme.textTheme.bodyMedium?.color ?? Colors.white).withValues(alpha: 0.6),
-                                            fontSize: 13,
-                                            fontFamily: 'monospace',
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => widget.onSelectTab?.call(2),
+                              icon: const Icon(Icons.credit_card_rounded, size: 18),
+                              label: const Text("CARTÕES"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0A1128),
+                                foregroundColor: corBorda,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  // 🛡️ CORREÇÃO LN 167: Modificado de Border.all para BorderSide genuíno
+                                  side: BorderSide(color: corBorda.withValues(alpha: 0.15)),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Painel de Métricas do Mês
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF070D19),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Text(
+                              "MÉTRICAS DO CICLO CORRENTE",
+                              style: TextStyle(color: corTextoAlta, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1),
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              children: [
+                                const Icon(Icons.arrow_upward_rounded, color: Colors.greenAccent),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text("ENTRADAS ACUMULADAS", style: TextStyle(color: corTextoMedia, fontSize: 10)),
+                                    Text("R\$ ${totalEntradas.toStringAsFixed(2)}", style: const TextStyle(color: Colors.greenAccent, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
+                                  ],
+                                )
+                              ],
+                            ),
+                            const Divider(height: 24, color: Colors.white10),
+                            Row(
+                              children: [
+                                const Icon(Icons.arrow_downward_rounded, color: Colors.redAccent),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text("SAÍDAS REGISTADAS", style: TextStyle(color: corTextoMedia, fontSize: 10)),
+                                    Text("R\$ ${totalSaidas.toStringAsFixed(2)}", style: const TextStyle(color: Colors.redAccent, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
+                                  ],
+                                )
+                              ],
+                            ),
+                            const Divider(height: 24, color: Colors.white10),
+                            Row(
+                              children: [
+                                const Icon(Icons.analytics_outlined, color: Colors.orangeAccent),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text("PREVISTO ADICIONAL", style: TextStyle(color: corTextoMedia, fontSize: 10)),
+                                    Text("R\$ ${(controle?.despesasPrevistas ?? 0.0).toStringAsFixed(2)}", style: const TextStyle(color: Colors.orangeAccent, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
+                                  ],
+                                )
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-          ),
-        ),
-      );
+              ),
+      ),
+    );
   }
 }

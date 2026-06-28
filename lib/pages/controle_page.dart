@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
-
 import '../models/controle_financeiro.dart';
 import '../models/usuario.dart';
 import '../services/controle_service.dart';
 import '../services/preferences_service.dart';
 import '../services/parcelas_service.dart';
-import '../widgets/app_drawer.dart';
 import '../widgets/fundo_cosmico.dart';
 
 class ControlePage extends StatefulWidget {
-  final Function(int)? onSelectTab; // Callback para sincronia perfeita com as abas
+  final Function(int)? onSelectTab;
 
   const ControlePage({super.key, this.onSelectTab});
 
@@ -18,8 +16,6 @@ class ControlePage extends StatefulWidget {
 }
 
 class _ControlePageState extends State<ControlePage> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  
   final receitaController = TextEditingController();
   final despesaController = TextEditingController();
   final previstoController = TextEditingController();
@@ -27,7 +23,6 @@ class _ControlePageState extends State<ControlePage> {
   Usuario? usuario;
   ControleFinanceiro? controle;
   double totalParcelasMes = 0;
-
   bool carregando = true;
 
   @override
@@ -45,296 +40,148 @@ class _ControlePageState extends State<ControlePage> {
   }
 
   Future<void> carregarDados() async {
-    try {
-      final usuarioCarregado = await PreferencesService.carregarUsuario();
-      final controleCarregado = await ControleService.carregarControle();
-      final parcelas = await ParcelasService.calcularTotalMes();
+    final resUsuario = await PreferencesService.carregarUsuario();
+    final resControle = await ControleService.carregarControle();
+    final resParcelas = await ParcelasService.calcularTotalMes();
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      setState(() {
-        usuario = usuarioCarregado;
-        controle = controleCarregado;
-        totalParcelasMes = parcelas;
-        carregando = false;
-      });
-    } catch (e) {
-      debugPrint("Erro ao auditar dados de fluxo: $e");
-      if (mounted) setState(() => carregando = false);
-    }
+    setState(() {
+      usuario = resUsuario;
+      controle = resControle;
+      totalParcelasMes = resParcelas;
+      carregando = false;
+    });
   }
 
-  bool _valorValido(String text) {
-    final valor = double.tryParse(text.replaceAll(',', '.'));
-    return valor != null && valor > 0;
-  }
-
-  Future<void> adicionarReceita() async {
-    if (!_valorValido(receitaController.text)) return;
-    final valor = double.parse(receitaController.text.replaceAll(',', '.'));
+  Future<void> lancarReceita() async {
+    final valor = double.tryParse(receitaController.text.replaceAll(',', '.')) ?? 0;
+    if (valor <= 0) return;
+    setState(() => carregando = true);
     await ControleService.adicionarReceita(valor);
     receitaController.clear();
     await carregarDados();
   }
 
-  Future<void> adicionarDespesa() async {
-    if (!_valorValido(despesaController.text)) return;
-    final valor = double.parse(despesaController.text.replaceAll(',', '.'));
+  Future<void> lancarDespesa() async {
+    final valor = double.tryParse(despesaController.text.replaceAll(',', '.')) ?? 0;
+    if (valor <= 0) return;
+    setState(() => carregando = true);
     await ControleService.adicionarDespesa(valor);
     despesaController.clear();
     await carregarDados();
   }
 
-  Future<void> adicionarPrevisto() async {
-    if (!_valorValido(previstoController.text)) return;
-    final valor = double.parse(previstoController.text.replaceAll(',', '.'));
+  Future<void> lancarPrevisto() async {
+    final valor = double.tryParse(previstoController.text.replaceAll(',', '.')) ?? 0;
+    if (valor <= 0) return;
+    setState(() => carregando = true);
     await ControleService.adicionarPrevisto(valor);
     previstoController.clear();
     await carregarDados();
   }
 
-  Future<void> encerrarMes() async {
+  Future<void> executarVirada() async {
     final confirmar = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF0A0F1E),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'ENCERRAR CICLO MENSAL',
-          style: TextStyle(color: Color(0xFFFF6B6B), fontSize: 13, letterSpacing: 1, fontWeight: FontWeight.bold),
-        ),
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0A1128),
+        title: const Text("FECHAR CICLO MENSAL?", style: TextStyle(color: Colors.white)),
         content: const Text(
-          'Confirmar o encerramento do ciclo atual? Os dados correntes serão compilados no histórico gerencial e o painel redefinido para o próximo mês.',
-          style: TextStyle(color: Colors.white70, fontSize: 14),
+          "Isto irá snapshotar os teus dados atuais no histórico, rodar faturas de parcelas e limpar a folha do mês atual. Continuar?",
+          style: TextStyle(color: Colors.white70),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('CANCELAR', style: TextStyle(color: Colors.white38)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF6B6B),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text('CONFIRMAR FECHAMENTO', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("ABORTAR")),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("CONFIRMAR")),
         ],
       ),
     );
 
-    if (confirmar != true) return;
-
-    await ControleService.encerrarMes();
-    await carregarDados();
-
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Ciclo mensal encerrado e arquivado com sucesso!'),
-        backgroundColor: Color(0xFF0B1424),
-      ),
-    );
+    if (confirmar == true) {
+      setState(() => carregando = true);
+      await ControleService.encerrarMes();
+      await carregarDados();
+      widget.onSelectTab?.call(0); // Volta para a Dashboard automaticamente
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final saldo = controle != null && usuario != null
-        ? controle!.saldoFinal(usuario!.ganhoFixo, totalParcelasDoMes: totalParcelasMes)
-        : 0.0;
-
     return Scaffold(
-      key: _scaffoldKey,
-      drawer: AppDrawer(onSelectTab: widget.onSelectTab),
+      backgroundColor: Colors.transparent,
       body: FundoCosmico(
-        child: SafeArea(
-          child: carregando
-              ? const Center(child: CircularProgressIndicator(color: Color(0xFF00B4D8)))
-              : ListView(
-                  padding: const EdgeInsets.all(20),
-                  physics: const BouncingScrollPhysics(),
+        child: carregando
+            ? const Center(child: CircularProgressIndicator(color: Color(0xFF00B4D8)))
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // 🌌 Barra de Navegação Superior
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.notes_rounded, color: Colors.white, size: 28),
-                          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                        ),
-                        const Text(
-                          "LANÇAMENTOS DE FLUXO",
-                          style: TextStyle(
-                            color: Color(0xFF00B4D8),
-                            fontSize: 12,
-                            letterSpacing: 2,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(width: 48),
-                      ],
-                    ),
+                    _buildSecaoLancamento("INJETAR RECEITA EXTRA", "Lançar Ganho", receitaController, Colors.greenAccent, lancarReceita),
                     const SizedBox(height: 20),
-
-                    // 💎 Mostrador de Saldo Real Dinâmico
-                    Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0B1424).withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: const Color(0xFF00B4D8).withValues(alpha: 0.15)),
-                      ),
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        children: [
-                          const Text(
-                            'SALDO ATUAL REAL',
-                            style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.5),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'R\$ ${saldo.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 36,
-                              color: Color(0xFF8CE8FF),
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: -0.5,
-                              fontFamily: 'monospace',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // 📊 Painel de Resumos Protegido contra Nulos (Null-Safe)
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0B1424).withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
-                      ),
-                      padding: const EdgeInsets.all(18),
-                      child: Column(
-                        children: [
-                          _linhaResumo('Renda Base (Salário)', usuario?.ganhoFixo ?? 0.0, const Color(0xFF00B4D8)),
-                          _linhaResumo('Receitas Extras', controle?.receitasExtras ?? 0.0, const Color(0xFF8CE8FF)),
-                          _linhaResumo('Despesas Diárias', controle?.despesas ?? 0.0, const Color(0xFFFF6B6B)),
-                          _linhaResumo('Despesas Previstas', controle?.despesasPrevistas ?? 0.0, Colors.orangeAccent),
-                          _linhaResumo('Fatura de Parcelas', totalParcelasMes, const Color(0xFFE040FB)),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // 🛠️ Módulos de Entrada de Dados
-                    _campoFinanceiro(
-                      controller: receitaController,
-                      titulo: 'RECEITA EXTRA',
-                      botao: 'INJETAR',
-                      onPressed: adicionarReceita,
-                      corIcone: const Color(0xFF8CE8FF),
-                      icone: Icons.add_chart_rounded,
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    _campoFinanceiro(
-                      controller: despesaController,
-                      titulo: 'REGISTRAR DESPESA',
-                      botao: 'DEBITAR',
-                      onPressed: adicionarDespesa,
-                      corIcone: const Color(0xFFFF6B6B),
-                      icone: Icons.money_off_rounded,
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    _campoFinanceiro(
-                      controller: previstoController,
-                      titulo: 'PROJETAR DESPESA PREVISTA',
-                      botao: 'PROJETAR',
-                      onPressed: adicionarPrevisto,
-                      corIcone: Colors.orangeAccent,
-                      icone: Icons.analytics_rounded,
-                    ),
-
+                    _buildSecaoLancamento("REGISTAR DESPESA À VISTA", "Lançar Débito", despesaController, Colors.redAccent, lancarDespesa),
+                    const SizedBox(height: 20),
+                    _buildSecaoLancamento("RESERVAR GASTO PREVISTO", "Salvar Alocação", previstoController, Colors.orangeAccent, lancarPrevisto),
                     const SizedBox(height: 32),
 
-                    // 🚨 Botão de Fechamento de Mês Corporativo
-                    SizedBox(
-                      height: 50,
-                      child: ElevatedButton.icon(
-                        onPressed: encerrarMes,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF6B6B).withValues(alpha: 0.05),
-                          side: const BorderSide(color: Color(0xFFFF6B6B), width: 1),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        ),
-                        icon: const Icon(Icons.archive_rounded, color: Color(0xFFFF6B6B), size: 20),
-                        label: const Text(
-                          'CONCLUIR E FECHAR MÊS CORRENTE',
-                          style: TextStyle(color: Color(0xFFFF6B6B), fontWeight: FontWeight.bold, letterSpacing: 1),
-                        ),
+                    // Card Virada de Mês
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF140B1B),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.purpleAccent.withValues(alpha: 0.2)),
                       ),
-                    ),
-                    const SizedBox(height: 24),
+                      child: Column(
+                        children: [
+                          const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.autorenew_rounded, color: Colors.purpleAccent),
+                              SizedBox(width: 8),
+                              Text("VIRADA DE MÊS CRONOLÓGICA", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1)),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            "Caso queiras forçar a transição de ciclo financeiro para o próximo mês agora mesmo, aciona o propulsor abaixo.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white54, fontSize: 12),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: executarVirada,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.purpleAccent,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            child: const Text("PROMOVER VIRADA DE CICLO", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          )
+                        ],
+                      ),
+                    )
                   ],
                 ),
-        ),
+              ),
       ),
     );
   }
 
-  Widget _linhaResumo(String titulo, double valor, Color cor) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(titulo, style: const TextStyle(color: Colors.white70, fontSize: 14)),
-          Text(
-            'R\$ ${valor.toStringAsFixed(2)}',
-            style: TextStyle(color: cor, fontWeight: FontWeight.bold, fontSize: 14, fontFamily: 'monospace'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _campoFinanceiro({
-    required TextEditingController controller,
-    required String titulo,
-    required String botao,
-    required VoidCallback onPressed,
-    required Color corIcone,
-    required IconData icone,
-  }) {
+  Widget _buildSecaoLancamento(String titulo, String botao, TextEditingController controller, Color corIcone, VoidCallback onPressed) {
     return Container(
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF0B1424).withValues(alpha: 0.4),
+        color: const Color(0xFF0A1128),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+        border: Border.all(color: corIcone.withValues(alpha: 0.15)),
       ),
-      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(icone, color: corIcone, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                titulo,
-                style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1),
-              ),
-            ],
-          ),
+          Text(titulo, style: TextStyle(color: corIcone, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1)),
           const SizedBox(height: 12),
           Row(
             children: [

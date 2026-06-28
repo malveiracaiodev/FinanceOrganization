@@ -51,7 +51,7 @@ class HistoricoMensal {
     );
   }
 
-  /// 💾 Serialização
+  /// 💾 Serialização (Chaves explícitas protegidas contra R8)
   Map<String, dynamic> toMap() {
     return {
       'mesAno': mesAno,

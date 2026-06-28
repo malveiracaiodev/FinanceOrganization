@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/usuario.dart';
-import 'historico_service.dart'; // 🔥 Importação necessária para ler a chave do histórico
+import 'historico_service.dart';
 
 class PreferencesService {
   static const String _keyUsuario = 'usuario_dados';
@@ -10,31 +10,47 @@ class PreferencesService {
 
   // Salva o objeto Usuário completo convertido em JSON string de forma segura
   static Future<void> salvarUsuario(Usuario usuario) async {
-    final prefs = await SharedPreferences.getInstance();
-    final String jsonStr = jsonEncode(usuario.toJson());
-    await prefs.setString(_keyUsuario, jsonStr);
-    await prefs.setBool(_cadastroFeito, true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String jsonStr = jsonEncode(usuario.toJson());
+      await prefs.setString(_keyUsuario, jsonStr);
+      await prefs.setBool(_cadastroFeito, true);
+    } catch (e) {
+      debugPrint("Erro crítico ao salvar usuário: $e");
+    }
   }
 
   // Carrega o usuário restaurando o estado exato de todas as variáveis
   static Future<Usuario?> carregarUsuario() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonStr = prefs.getString(_keyUsuario);
-
-    if (jsonStr == null || jsonStr.isEmpty) return null;
-
     try {
-      final Map<String, dynamic> map = jsonDecode(jsonStr);
-      return Usuario.fromJson(map);
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString(_keyUsuario);
+
+      if (jsonStr == null || jsonStr.isEmpty) {
+        debugPrint("Nenhum dado de usuário localizado no armazenamento local.");
+        return null;
+      }
+
+      final dynamic decoded = jsonDecode(jsonStr);
+      if (decoded is Map<String, dynamic>) {
+        return Usuario.fromJson(decoded);
+      }
+      
+      return null;
     } catch (e) {
-      debugPrint("Erro ao carregar usuário do preferences: $e");
+      // 🚨 Evita que o app trave em produção se o JSON for corrompido pelo ProGuard
+      debugPrint("Erro de Desserialização (R8/ProGuard) ao carregar usuário: $e");
       return null;
     }
   }
 
   static Future<bool> cadastroExiste() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_cadastroFeito) ?? false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(_cadastroFeito) ?? false;
+    } catch (_) {
+      return false;
+    }
   }
 
   // Atualiza dinamicamente o ganho sem corromper os outros dados
