@@ -22,20 +22,20 @@ class _NavegacaoPageState extends State<NavegacaoPage> {
     });
   }
 
-  // 🛰️ Lista oficial de páginas integradas ao hub orbital de abas
+  // 🛰️ Lista oficial organizada conforme o layout padrão do Mark I (Imagem screen.png)
   List<Widget> get _paginas => [
-    DashboardPage(onSelectTab: _mudarAbaExterna),
-    ControlePage(onSelectTab: _mudarAbaExterna),
-    ParcelasPage(onSelectTab: _mudarAbaExterna),
-    HistoricoPage(onSelectTab: _mudarAbaExterna),
+    DashboardPage(onSelectTab: _mudarAbaExterna), // 0: Home
+    HistoricoPage(onSelectTab: _mudarAbaExterna), // 1: History
+    ControlePage(onSelectTab: _mudarAbaExterna),  // 2: Add
+    ParcelasPage(onSelectTab: _mudarAbaExterna),  // 3: Settings/Cartões
   ];
 
   String get _tituloAppBar {
     switch (_currentIndex) {
       case 0: return "PAINEL CENTRAL";
-      case 1: return "CONTROLE DE FLUXO";
-      case 2: return "CONTRATOS E PARCELAS";
-      case 3: return "HISTÓRICO DE MISSÕES";
+      case 1: return "HISTÓRICO DE MISSÕES";
+      case 2: return "CONTROLE DE FLUXO";
+      case 3: return "CONTRATOS E PARCELAS";
       default: return "SISTEMA CENTRAL";
     }
   }
@@ -57,7 +57,10 @@ class _NavegacaoPageState extends State<NavegacaoPage> {
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
       ),
-      drawer: const AppDrawer(),
+      
+      // 🎯 CORREÇÃO CRÍTICA: Injetando o callback para o AppDrawer conseguir mudar as abas
+      drawer: AppDrawer(onSelectTab: _mudarAbaExterna),
+      
       body: IndexedStack(
         index: _currentIndex,
         children: _paginas,
@@ -83,10 +86,11 @@ class _NavegacaoPageState extends State<NavegacaoPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildBottomActionItem(index: 0, icone: Icons.rocket_launch_outlined, label: "Painel"),
-                _buildBottomActionItem(index: 1, icone: Icons.account_balance_wallet_outlined, label: "Fluxo"),
-                _buildBottomActionItem(index: 2, icone: Icons.credit_card_outlined, label: "Cartões"),
-                _buildBottomActionItem(index: 3, icone: Icons.bar_chart_outlined, label: "Histórico"),
+                // 🛸 Botões remodelados e reordenados com base na imagem screen.png do projeto
+                _buildBottomActionItem(index: 0, icone: Icons.home_filled, label: "Home"),
+                _buildBottomActionItem(index: 1, icone: Icons.history_toggle_off_rounded, label: "History"),
+                _buildBottomActionItem(index: 2, icone: Icons.add_circle_outline_rounded, label: "Add"),
+                _buildBottomActionItem(index: 3, icone: Icons.settings_outlined, label: "Settings"),
               ],
             ),
           ),
@@ -95,7 +99,7 @@ class _NavegacaoPageState extends State<NavegacaoPage> {
     );
   }
 
-Widget _buildBottomActionItem({required int index, required IconData icone, required String label}) {
+  Widget _buildBottomActionItem({required int index, required IconData icone, required String label}) {
     final bool ativo = _currentIndex == index;
     return GestureDetector(
       onTap: () => _mudarAbaExterna(index),
@@ -107,7 +111,7 @@ Widget _buildBottomActionItem({required int index, required IconData icone, requ
           children: [
             Icon(
               icone, 
-              color: ativo ? const Color(0xFF00B4D8) : Colors.white38, // ✨ CORREÇÃO: Removido o caractere '\' que quebrava o compilador
+              color: ativo ? const Color(0xFF00B4D8) : Colors.white38,
               size: 22,
             ),
             const SizedBox(height: 4),
@@ -123,5 +127,5 @@ Widget _buildBottomActionItem({required int index, required IconData icone, requ
         ),
       ),
     );
-}
+  }
 }

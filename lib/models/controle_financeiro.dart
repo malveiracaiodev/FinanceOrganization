@@ -1,12 +1,10 @@
 class ControleFinanceiro {
   final double receitasExtras;
   final double despesas;
-  final double despesasPrevistas;
 
   const ControleFinanceiro({
     this.receitasExtras = 0.0,
     this.despesas = 0.0,
-    this.despesasPrevistas = 0.0,
   });
 
   /// 🧮 Calcula o saldo final real deduzindo entradas e saídas (Inclui as faturas de parcelas)
@@ -18,12 +16,10 @@ class ControleFinanceiro {
   ControleFinanceiro copyWith({
     double? receitasExtras,
     double? despesas,
-    double? despesasPrevistas,
   }) {
     return ControleFinanceiro(
       receitasExtras: receitasExtras ?? this.receitasExtras,
       despesas: despesas ?? this.despesas,
-      despesasPrevistas: despesasPrevistas ?? this.despesasPrevistas,
     );
   }
 
@@ -32,7 +28,6 @@ class ControleFinanceiro {
     return {
       'receitasExtras': receitasExtras,
       'despesas': despesas,
-      'despesasPrevistas': despesasPrevistas,
     };
   }
 
@@ -41,17 +36,15 @@ class ControleFinanceiro {
     return ControleFinanceiro(
       receitasExtras: _parseDouble(map['receitasExtras']),
       despesas: _parseDouble(map['despesas']),
-      despesasPrevistas: _parseDouble(map['despesasPrevistas']),
     );
   }
 
   Map<String, dynamic> toJson() => toMap();
-  factory ControleFinanceiro.fromJson(Map<String, dynamic> json) => ControleFinanceiro.fromMap(json);
+  factory ControleFinanceiro.fromJson(Map<String, dynamic> map) => ControleFinanceiro.fromMap(map);
 
   static double _parseDouble(dynamic value) {
     if (value == null) return 0.0;
-    if (value is double) return value;
-    if (value is int) return value.toDouble();
+    if (value is num) return value.toDouble();
     return double.tryParse(value.toString()) ?? 0.0;
   }
 }

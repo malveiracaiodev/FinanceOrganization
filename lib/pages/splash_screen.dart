@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
-
-import '../core/theme/app_theme.dart';
 import '../services/preferences_service.dart';
-import '../services/controle_service.dart';
-import '../pages/navegacao_page.dart'; // 🔥 IMPORT DA NOVA TELA DE NAVEGAÇÃO
-// 🔥 IMPORT DA NOVA TELA PRINCIPAL
+import '../pages/navegacao_page.dart';
 import 'cadastro_page.dart';
-import '../widgets/fundo_cosmico.dart'; 
+import '../widgets/fundo_cosmico.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -19,8 +15,6 @@ class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _animation;
-
-  bool _loading = true;
 
   @override
   void initState() {
@@ -46,64 +40,35 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _startApp() async {
     try {
-      // 1. Carrega os dados básicos de usuário e finanças
-      final user = await PreferencesService.carregarUsuario();
-      await ControleService.carregarControle();
+      // 🛰️ Tempo mínimo para estabilização de sistemas
+      await Future.delayed(const Duration(seconds: 2));
 
-      // 2. LÓGICA DINÂMICA DE TRANSIÇÃO DE CICLO MENSAL (Sincronizada)
-      if (user != null) {
-        final dataAtual = DateTime.now();
-        
-        // Compara o mês do sistema com o último mês salvo no perfil do usuário
-        final bool mesMudou = dataAtual.month != user.ultimoMesVerificado; 
-        
-        if (mesMudou) {
-          // 🔥 CORRIGIDO: Roda a virada completa (Gera histórico, roda parcelas e recalcula o novo saldo)
-          await ControleService.encerrarMes();
-        }
-      }
+      // 🔍 Verificação de telemetria: Usuário cadastrado?
+      final cadastrado = await PreferencesService.cadastroExiste();
 
       if (!mounted) return;
 
-      setState(() => _loading = false);
-
-      // Pequena pausa com os sistemas prontos para suavizar a transição visual
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      if (!mounted) return;
-
-      // 3. Roteamento definitivo baseado na existência do usuário
-      if (user == null) {
-        _goToCadastro();
+      if (cadastrado) {
+        // Redirecionamento para o Hub Central
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const NavegacaoPage()),
+        );
       } else {
-        _goToMainHub(); // 🔥 Alterado para ir para a nova página Main
+        // Redirecionamento para o Módulo de Cadastro
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const CadastroPage()),
+        );
       }
     } catch (e) {
-      debugPrint("Erro na inicialização do app: $e");
-
-      if (!mounted) return;
-      _goToCadastro();
+      debugPrint("Erro crítico no sistema de inicialização: $e");
+      // Fallback de emergência
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const CadastroPage()),
+      );
     }
-  }
-
-// 🚀 ROTA CORRIGIDA: Agora direciona para a central de abas do aplicativo!
-  void _goToMainHub() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        // Substitua 'NavegacaoPage()' pelo nome EXATO da classe que controla suas abas
-        builder: (_) => const NavegacaoPage(), 
-      ),
-    );
-  }
-
-  void _goToCadastro() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const CadastroPage(),
-      ),
-    );
   }
 
   @override
@@ -114,8 +79,10 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    const Color corCianoNeon = Color(0xFF00B4D8);
+
     return Scaffold(
-      body: FundoCosmico( 
+      body: FundoCosmico(
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -123,16 +90,14 @@ class _SplashScreenState extends State<SplashScreen>
               ScaleTransition(
                 scale: _animation,
                 child: const Icon(
-                  Icons.donut_large_rounded, 
+                  Icons.donut_large_rounded,
                   size: 80,
-                  color: AstraTheme.primary,
+                  color: corCianoNeon,
                 ),
               ),
-
               const SizedBox(height: 28),
-
               const Text(
-                "ASTRACONTROL",
+                "FINANÇAS MARK I",
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 22,
@@ -140,12 +105,10 @@ class _SplashScreenState extends State<SplashScreen>
                   letterSpacing: 4,
                 ),
               ),
-
               const SizedBox(height: 12),
-
-              Text(
-                _loading ? "Carregando dados financeiros..." : "Sistemas prontos.",
-                style: const TextStyle(
+              const Text(
+                "Sistemas prontos para monitorização.",
+                style: TextStyle(
                   color: Colors.white54,
                   fontSize: 13,
                   letterSpacing: 0.5,

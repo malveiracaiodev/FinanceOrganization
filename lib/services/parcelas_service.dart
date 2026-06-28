@@ -135,6 +135,11 @@ class ParcelasService {
     await salvar(atualizada);
   }
 
+  /// 🔄 Alias tático de sincronização para a virada automática do ControleService
+  static Future<void> virarMes() async {
+    await processarMes();
+  }
+
   static Future<void> adiantarContrato(String id) async {
     final lista = await carregar();
     final index = lista.indexWhere((p) => p.id == id);

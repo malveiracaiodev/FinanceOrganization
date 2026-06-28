@@ -23,7 +23,7 @@ class _CadastroPageState extends State<CadastroPage> {
 
   @override
   void dispose() {
-    // 🔥 Liberação obrigatória de fluxo de memória (Previne Memory Leaks)
+    // Liberação obrigatória de fluxo de memória (Previne Memory Leaks)
     nomeController.dispose();
     sobrenomeController.dispose();
     empresaController.dispose();
@@ -33,8 +33,10 @@ class _CadastroPageState extends State<CadastroPage> {
   }
 
   Future<void> salvarCadastro() async {
-    if (nomeController.text.trim().isEmpty ||
-        sobrenomeController.text.trim().isEmpty) {
+    final nomeText = nomeController.text.trim();
+    final sobrenomeText = sobrenomeController.text.trim();
+
+    if (nomeText.isEmpty || sobrenomeText.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Por favor, preencha o nome e sobrenome do usuário.")),
       );
@@ -52,15 +54,17 @@ class _CadastroPageState extends State<CadastroPage> {
       return;
     }
 
+// Injeção de estado de carregamento
     setState(() => salvando = true);
 
+    // ✅ CORREÇÃO: Enviando os parâmetros 'nome' e 'sobrenome' exigidos pelo seu modelo
     final usuario = Usuario(
-      nome: nomeController.text.trim(),
-      sobrenome: sobrenomeController.text.trim(),
+      nome: nomeText,
+      sobrenome: sobrenomeText, 
       empresa: empresaController.text.trim(),
       cargo: cargoController.text.trim(),
       ganhoFixo: ganho,
-      saldoAtual: ganho, // Mapeamento inicial equilibrado
+      saldoAtual: ganho, 
       ultimoMesVerificado: DateTime.now().month,
     );
 

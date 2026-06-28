@@ -38,7 +38,6 @@ class PreferencesService {
       
       return null;
     } catch (e) {
-      // 🚨 Evita que o app trave em produção se o JSON for corrompido pelo ProGuard
       debugPrint("Erro de Desserialização (R8/ProGuard) ao carregar usuário: $e");
       return null;
     }

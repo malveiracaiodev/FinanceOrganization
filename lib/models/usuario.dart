@@ -4,8 +4,6 @@ class Usuario {
   final String empresa;
   final String cargo;
   final double ganhoFixo;
-  
-  // 🌌 CAMPOS DE SESSÃO: Gerenciamento do ciclo da Mark I
   final double saldoAtual;
   final int ultimoMesVerificado;
 
@@ -43,7 +41,6 @@ class Usuario {
     );
   }
 
-  /// 💾 Serialização para persistência orbital (Chaves protegidas e estáticas)
   Map<String, dynamic> toMap() {
     return {
       'nome': nome,
@@ -56,7 +53,6 @@ class Usuario {
     };
   }
 
-  /// 🔐 Desserialização robusta anti-crash
   factory Usuario.fromMap(Map<String, dynamic> map) {
     return Usuario(
       nome: (map['nome'] ?? '') as String,
@@ -64,16 +60,14 @@ class Usuario {
       empresa: (map['empresa'] ?? '') as String,
       cargo: (map['cargo'] ?? '') as String,
       ganhoFixo: _parseDouble(map['ganhoFixo']),
-      saldoAtual: _parseDouble(map['saldoAtual'] ?? map['ganhoFixo']), // Fallback perfeito para o primeiro login
+      saldoAtual: _parseDouble(map['saldoAtual'] ?? map['ganhoFixo']), 
       ultimoMesVerificado: _parseInt(map['ultimoMesVerificado'], padrao: DateTime.now().month),
     );
   }
 
-  // 🔄 Aliases de compatibilidade para sincronizar perfeitamente com os Services
   Map<String, dynamic> toJson() => toMap();
   factory Usuario.fromJson(Map<String, dynamic> json) => Usuario.fromMap(json);
 
-  /// 🧠 Parser seguro para decimais (Evita crash silencioso de JSON)
   static double _parseDouble(dynamic value) {
     if (value == null) return 0.0;
     if (value is double) return value;
@@ -81,8 +75,7 @@ class Usuario {
     return double.tryParse(value.toString()) ?? 0.0;
   }
 
-  /// 🧠 Parser seguro para inteiros
-  static int _parseInt(dynamic value, {int padrao = 1}) {
+  static int _parseInt(dynamic value, {int padrao = 0}) {
     if (value == null) return padrao;
     if (value is int) return value;
     if (value is double) return value.toInt();

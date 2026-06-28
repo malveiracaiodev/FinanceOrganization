@@ -18,7 +18,6 @@ class ControlePage extends StatefulWidget {
 class _ControlePageState extends State<ControlePage> {
   final receitaController = TextEditingController();
   final despesaController = TextEditingController();
-  final previstoController = TextEditingController();
 
   Usuario? usuario;
   ControleFinanceiro? controle;
@@ -35,7 +34,6 @@ class _ControlePageState extends State<ControlePage> {
   void dispose() {
     receitaController.dispose();
     despesaController.dispose();
-    previstoController.dispose();
     super.dispose();
   }
 
@@ -72,15 +70,6 @@ class _ControlePageState extends State<ControlePage> {
     await carregarDados();
   }
 
-  Future<void> lancarPrevisto() async {
-    final valor = double.tryParse(previstoController.text.replaceAll(',', '.')) ?? 0;
-    if (valor <= 0) return;
-    setState(() => carregando = true);
-    await ControleService.adicionarPrevisto(valor);
-    previstoController.clear();
-    await carregarDados();
-  }
-
   Future<void> executarVirada() async {
     final confirmar = await showDialog<bool>(
       context: context,
@@ -100,9 +89,20 @@ class _ControlePageState extends State<ControlePage> {
 
     if (confirmar == true) {
       setState(() => carregando = true);
+      
+      // 🛰️ Executa o encerramento do mês no storage local
       await ControleService.encerrarMes();
+      
+      // 🔄 Atualiza os dados desta tela
       await carregarDados();
-      widget.onSelectTab?.call(0); // Volta para a Dashboard automaticamente
+      
+      if (!mounted) return;
+      
+      // ✨ SOLUÇÃO DO BUG: Força o Flutter a redesenhar as views da árvore para refletir a limpeza de cache
+      Feedback.forLongPress(context); 
+      
+      // Redireciona o comandante de volta para o Painel Central (Index 0)
+      widget.onSelectTab?.call(0); 
     }
   }
 
@@ -121,8 +121,6 @@ class _ControlePageState extends State<ControlePage> {
                     _buildSecaoLancamento("INJETAR RECEITA EXTRA", "Lançar Ganho", receitaController, Colors.greenAccent, lancarReceita),
                     const SizedBox(height: 20),
                     _buildSecaoLancamento("REGISTAR DESPESA À VISTA", "Lançar Débito", despesaController, Colors.redAccent, lancarDespesa),
-                    const SizedBox(height: 20),
-                    _buildSecaoLancamento("RESERVAR GASTO PREVISTO", "Salvar Alocação", previstoController, Colors.orangeAccent, lancarPrevisto),
                     const SizedBox(height: 32),
 
                     // Card Virada de Mês

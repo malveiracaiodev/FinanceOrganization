@@ -5,7 +5,6 @@ import '../widgets/fundo_cosmico.dart';
 
 class HistoricoPage extends StatefulWidget {
   final Function(int)? onSelectTab;
-
   const HistoricoPage({super.key, this.onSelectTab});
 
   @override
@@ -19,10 +18,10 @@ class _HistoricoPageState extends State<HistoricoPage> {
   @override
   void initState() {
     super.initState();
-    carregar();
+    _carregarDados();
   }
 
-  Future<void> carregar() async {
+  Future<void> _carregarDados() async {
     final data = await HistoricoService.carregar();
     if (!mounted) return;
     setState(() {
@@ -34,57 +33,56 @@ class _HistoricoPageState extends State<HistoricoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
       body: FundoCosmico(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: carregando
-              ? const Center(child: CircularProgressIndicator(color: Color(0xFF00B4D8)))
-              : historico.isEmpty
-                  ? const Center(child: Text("Nenhum ciclo fechado no histórico.", style: TextStyle(color: Colors.white38)))
-                  : ListView.builder(
-                      itemCount: historico.length,
-                      itemBuilder: (context, index) {
-                        final mes = historico[index];
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0A1128),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text("PERÍODO: ${mes.mesAno}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                                  Text(
-                                    mes.resto >= 0 ? "SUPERÁVIT" : "DÉFICIT",
-                                    style: TextStyle(color: mes.resto >= 0 ? Colors.greenAccent : Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 11),
-                                  ),
-                                ],
-                              ),
-                              const Divider(height: 20, color: Colors.white10),
-                              Text(
-                                "Fixo: R\$ ${mes.ganhoFixo.toStringAsFixed(2)}\n"
-                                "Extras: R\$ ${mes.ganhosAdicionais.toStringAsFixed(2)}\n"
-                                "Gastos Totais: R\$ ${mes.gastosTotais.toStringAsFixed(2)}",
-                                style: const TextStyle(color: Colors.white54, fontSize: 13, height: 1.5, fontFamily: 'monospace'),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                mes.statusOrbital,
-                                style: TextStyle(color: const Color(0xFF00B4D8).withValues(alpha: 0.8), fontSize: 12, fontWeight: FontWeight.bold),
-                              )
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-        ),
+        child: carregando
+            ? const Center(child: CircularProgressIndicator(color: Colors.cyan))
+            : historico.isEmpty
+                ? const Center(child: Text("Nenhuma missão registrada no histórico.", style: TextStyle(color: Colors.white54)))
+                : ListView.builder(
+                    padding: const EdgeInsets.only(top: 60, left: 16, right: 16),
+                    itemCount: historico.length,
+                    itemBuilder: (context, index) {
+                      return _buildCardMes(historico[index]);
+                    },
+                  ),
+      ),
+    );
+  }
+
+  Widget _buildCardMes(HistoricoMensal item) {
+    return Card(
+      color: const Color(0xFF0A1128),
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ExpansionTile(
+        iconColor: Colors.cyan,
+        title: Text(item.mesAno, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        subtitle: Text(item.statusOrbital, style: const TextStyle(fontSize: 10, color: Colors.white54)),
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _buildLinhaDetalhe("Receita Total", "R\$ ${item.receitaTotal.toStringAsFixed(2)}", Colors.white),
+                _buildLinhaDetalhe("Gastos", "R\$ ${item.gastosTotais.toStringAsFixed(2)}", Colors.redAccent),
+                const Divider(color: Colors.white10),
+                _buildLinhaDetalhe("Saldo Final", "R\$ ${item.resto.toStringAsFixed(2)}", Colors.greenAccent),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLinhaDetalhe(String label, String valor, Color cor) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.white70)),
+          Text(valor, style: TextStyle(color: cor, fontWeight: FontWeight.bold)),
+        ],
       ),
     );
   }

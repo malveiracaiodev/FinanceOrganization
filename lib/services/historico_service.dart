@@ -51,10 +51,10 @@ class HistoricoService {
     await salvarLista(lista);
   }
 
-  static Future<void> atualizarMes(int index, HistoricoMensal atualizado) async {
+  static Future<void> atualizarMes(int index, HistoricoMensal updated) async {
     final lista = await carregar();
     if (index >= 0 && index < lista.length) {
-      lista[index] = atualizado;
+      lista[index] = updated;
       await salvarLista(lista);
     }
   }

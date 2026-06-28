@@ -38,13 +38,21 @@ class Parcela {
     final anterior = parcelaAtual - 1;
     return copyWith(
       parcelaAtual: anterior,
-      ativa: true, // Reativa automaticamente caso estivesse marcada como concluída
+      ativa: true,
     );
   }
 
-  /// 🔄 Alias de compatibilidade com chamadas antigas de sincronismo de serviços
-  Parcela avancarParcela() => adiantar();
+  /// 🔄 Avança o contador automaticamente na virada de mês pelo Service
+  Parcela avancarParcela() {
+    if (!ativa) return this;
+    final proxima = parcelaAtual + 1;
+    return copyWith(
+      parcelaAtual: proxima,
+      ativa: proxima <= totalParcelas,
+    );
+  }
 
+  /// 🔁 Imutabilidade com copyWith
   Parcela copyWith({
     String? id,
     String? descricao,
@@ -92,7 +100,6 @@ class Parcela {
   Map<String, dynamic> toJson() => toMap();
   factory Parcela.fromJson(Map<String, dynamic> json) => Parcela.fromMap(json);
 
-  /// 🧠 Parser seguro para decimais (Garante estabilidade contra double/int dinâmicos)
   static double _parseDouble(dynamic value) {
     if (value == null) return 0.0;
     if (value is double) return value;
@@ -100,7 +107,6 @@ class Parcela {
     return double.tryParse(value.toString()) ?? 0.0;
   }
 
-  /// 🧠 Parser seguro para inteiros
   static int _parseInt(dynamic value, {int padrao = 0}) {
     if (value == null) return padrao;
     if (value is int) return value;

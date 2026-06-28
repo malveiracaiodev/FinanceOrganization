@@ -1,5 +1,5 @@
 class HistoricoMensal {
-  final String mesAno; // 📅 Ex: "06/2026" (Chave única para divisão perfeita)
+  final String mesAno; // 📅 Ex: "Junho 2026"
   final double ganhoFixo;
   final double ganhosAdicionais;
   final double gastosTotais;
@@ -32,11 +32,11 @@ class HistoricoMensal {
     } else if (saldo >= 0) {
       return "Sistemas Operando: Órbita estável 🟡";
     } else {
-      return "Aviso Crítico: Déficit na Órbita 🔴";
+      return "Alerta Crítico: Rompimento de Escudo 🔴";
     }
   }
 
-  /// 🔁 Permite edição/cópia com alterações dos meses passados
+  /// 🔁 Imutabilidade com copyWith
   HistoricoMensal copyWith({
     String? mesAno,
     double? ganhoFixo,
@@ -71,11 +71,9 @@ class HistoricoMensal {
     );
   }
 
-  // 🔄 Aliases de compatibilidade para sincronizar com o HistoricoService
   Map<String, dynamic> toJson() => toMap();
   factory HistoricoMensal.fromJson(Map<String, dynamic> json) => HistoricoMensal.fromMap(json);
 
-  /// 🧠 Parser seguro para decimais (Retorno estrito de double)
   static double _parseDouble(dynamic value) {
     if (value == null) return 0.0;
     if (value is double) return value;
