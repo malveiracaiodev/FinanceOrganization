@@ -70,21 +70,31 @@ class ParcelasPageState extends State<ParcelasPage> {
             TextField(controller: valorTotalCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Valor Total da Compra (R\$)")),
             TextField(controller: qtdCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Quantidade de Parcelas")),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () async {
-                final total = double.tryParse(valorTotalCtrl.text) ?? 0;
-                final parcelasQtd = int.tryParse(qtdCtrl.text) ?? 1;
-                if (descCtrl.text.isNotEmpty && total > 0) {
-                  await ParcelasService.cadastrarCompraParcelada(
-                    descricao: descCtrl.text,
-                    valorTotal: total,
-                    totalParcelas: parcelasQtd,
-                  );
-                  Navigator.pop(ctx);
-                  carregar();
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00B4D8), foregroundColor: const Color(0xFF060B16)),
+           ElevatedButton(
+onPressed: () async {
+  final total = double.tryParse(valorTotalCtrl.text) ?? 0;
+  final parcelasQtd = int.tryParse(qtdCtrl.text) ?? 1;
+
+  if (descCtrl.text.isNotEmpty && total > 0) {
+    // 1. Executa a tarefa assíncrona
+    await ParcelasService.cadastrarCompraParcelada(
+      descricao: descCtrl.text,
+      valorTotal: total,
+      totalParcelas: parcelasQtd,
+    );
+
+    // 2. A verificação "mounted" (Obrigatória após await)
+    if (!mounted) return; 
+
+    // 3. Agora é seguro usar o context
+    Navigator.of(context).pop();
+    carregar();
+  }
+},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00B4D8), 
+                foregroundColor: const Color(0xFF060B16)
+              ),
               child: const Text("LANÇAR NO SISTEMA", style: TextStyle(fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 24),
