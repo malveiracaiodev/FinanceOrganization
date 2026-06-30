@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+
+import 'core/theme/app_theme.dart'; // Importação do tema customizado Astra
 import 'pages/navegacao_page.dart';
 import 'pages/cadastro_page.dart';
-import 'pages/splash_screen.dart'; // Importando a Splash para fazer a checagem
+import 'pages/splash_screen.dart'; 
+import 'pages/configuracoes_page.dart'; // Importação da tela de configurações
 
 void main() async {
-  // 🚨 CRÍTICO: Garante que o armazenamento local e as funções nativas respondam no APK de Release
+  // 🚨 CRÍTICO: Garante que as rotinas nativas e o SharedPreferences respondam corretamente
   WidgetsFlutterBinding.ensureInitialized();
   
   runApp(const MyApp());
@@ -18,19 +21,19 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Finance Organization',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: Brightness.dark, // Garante que o tema escuro padrão do seu design seja herdado corretamente
-        scaffoldBackgroundColor: const Color(0xFF060B16),
-      ),
       
-      // 🎯 MODIFICAÇÃO MARK I: Definimos a SplashScreen como o ponto de entrada oficial do app
+      // ✅ CORREÇÃO: Aplica a identidade cósmica Astra unificada que projetamos
+      theme: AstraTheme.themeData, 
+      
+      // 🎯 MODIFICAÇÃO MARK I: SplashScreen definida como a porta de entrada oficial do sistema
       initialRoute: '/',
       
-      // 🛸 MAPA DE ROTAS: Centraliza os caminhos para evitar erros de navegação no AppDrawer e nas Páginas
+      // 🛸 MAPA DE ROTAS: Centraliza todas as rotas do Finanças Mark I
       routes: {
         '/': (context) => const SplashScreen(),
         '/cadastro': (context) => const CadastroPage(),
-        '/main_hub': (context) => const NavegacaoPage(), // O Hub com o menu inferior e a dashboard
+        '/main_hub': (context) => const NavegacaoPage(), // Dashboard com menu inferior flutuante
+        '/configuracoes': (context) => const ConfiguracoesPage(), // Nova tela de ajustes do comandante
       },
     );
   }

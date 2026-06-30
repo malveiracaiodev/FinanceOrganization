@@ -47,4 +47,26 @@ class ControleFinanceiro {
     if (value is num) return value.toDouble();
     return double.tryParse(value.toString()) ?? 0.0;
   }
+
+  // --- ADICIONADO: MELHORIAS TÉCNICAS DE QUALIDADE DE CÓDIGO ---
+
+  /// 🔍 Sobrescrita do toString() para facilitar a depuração no console
+  @override
+  String toString() {
+    return 'ControleFinanceiro(receitasExtras: $receitasExtras, despesas: $despesas)';
+  }
+
+  /// ⚖️ Sobrescrita da igualdade para comparação de valores internos (Ideal para testes e reatividade)
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+  
+    return other is ControleFinanceiro &&
+        other.receitasExtras == receitasExtras &&
+        other.despesas == despesas;
+  }
+
+  /// 🔢 HashCode correspondente à lógica de igualdade de valor
+  @override
+  int get hashCode => receitasExtras.hashCode ^ despesas.hashCode;
 }

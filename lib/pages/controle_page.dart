@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import '../models/controle_financeiro.dart';
-import '../models/usuario.dart';
+import 'package:flutter/services.dart'; // Importação essencial para formatadores de entrada
+
+import '../core/theme/app_theme.dart'; // Import do seu tema para acessar as cores de estado
 import '../services/controle_service.dart';
-import '../services/preferences_service.dart';
-import '../services/parcelas_service.dart';
 import '../widgets/fundo_cosmico.dart';
 
 class ControlePage extends StatefulWidget {
   final Function(int)? onSelectTab;
-
   const ControlePage({super.key, this.onSelectTab});
 
   @override
@@ -16,205 +14,264 @@ class ControlePage extends StatefulWidget {
 }
 
 class _ControlePageState extends State<ControlePage> {
-  final receitaController = TextEditingController();
-  final despesaController = TextEditingController();
-
-  Usuario? usuario;
-  ControleFinanceiro? controle;
-  double totalParcelasMes = 0;
-  bool carregando = true;
-
-  @override
-  void initState() {
-    super.initState();
-    carregarDados();
-  }
+  final _formKey = GlobalKey<FormState>();
+  final controller = TextEditingController();
+  
+  bool processando = false;
 
   @override
   void dispose() {
-    receitaController.dispose();
-    despesaController.dispose();
+    controller.dispose(); // CORREÇÃO: Previne Memory Leaks ao sair da tela
     super.dispose();
   }
 
-  Future<void> carregarDados() async {
-    final resUsuario = await PreferencesService.carregarUsuario();
-    final resControle = await ControleService.carregarControle();
-    final resParcelas = await ParcelasService.calcularTotalMes();
+  Future<void> _processar(bool ehReceita) async {
+    // Valida se o formulário foi preenchido de forma correta
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
-    if (!mounted) return;
+    // CORREÇÃO: Suporte nacional para separador decimal de vírgula
+    final valor = double.tryParse(controller.text.replaceAll(',', '.')) ?? 0;
 
-    setState(() {
-      usuario = resUsuario;
-      controle = resControle;
-      totalParcelasMes = resParcelas;
-      carregando = false;
-    });
-  }
+    if (valor <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("O valor do lançamento deve ser maior que zero.")),
+      );
+      return;
+    }
 
-  Future<void> lancarReceita() async {
-    final valor = double.tryParse(receitaController.text.replaceAll(',', '.')) ?? 0;
-    if (valor <= 0) return;
-    setState(() => carregando = true);
-    await ControleService.adicionarReceita(valor);
-    receitaController.clear();
-    await carregarDados();
-  }
+    setState(() => processando = true);
 
-  Future<void> lancarDespesa() async {
-    final valor = double.tryParse(despesaController.text.replaceAll(',', '.')) ?? 0;
-    if (valor <= 0) return;
-    setState(() => carregando = true);
-    await ControleService.adicionarDespesa(valor);
-    despesaController.clear();
-    await carregarDados();
-  }
+    try {
+      if (ehReceita) {
+        await ControleService.adicionarReceita(valor);
+      } else {
+        await ControleService.adicionarDespesa(valor);
+      }
 
-  Future<void> executarVirada() async {
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0A1128),
-        title: const Text("FECHAR CICLO MENSAL?", style: TextStyle(color: Colors.white)),
-        content: const Text(
-          "Isto irá snapshotar os teus dados atuais no histórico, rodar faturas de parcelas e limpar a folha do mês atual. Continuar?",
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("ABORTAR")),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("CONFIRMAR")),
-        ],
-      ),
-    );
-
-    if (confirmar == true) {
-      setState(() => carregando = true);
-      
-      // 🛰️ Executa o encerramento do mês no storage local
-      await ControleService.encerrarMes();
-      
-      // 🔄 Atualiza os dados desta tela
-      await carregarDados();
-      
       if (!mounted) return;
-      
-      // ✨ SOLUÇÃO DO BUG: Força o Flutter a redesenhar as views da árvore para refletir a limpeza de cache
-      Feedback.forLongPress(context); 
-      
-      // Redireciona o comandante de volta para o Painel Central (Index 0)
-      widget.onSelectTab?.call(0); 
+
+      // Feedback visual personalizado de acordo com o tipo de movimentação
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: ehReceita ? AstraTheme.successColor : AstraTheme.dangerColor,
+          duration: const Duration(seconds: 2),
+          content: Text(
+            ehReceita 
+                ? "Receita de R\$ ${valor.toStringAsFixed(2)} adicionada com sucesso!" 
+                : "Despesa de R\$ ${valor.toStringAsFixed(2)} registrada!",
+            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+          ),
+        ),
+      );
+
+      // Limpa o campo numérico após o sucesso
+      controller.clear();
+
+      // Redireciona de volta para a tela inicial (Dashboard / Index 0) usando o seu callback
+      if (widget.onSelectTab != null) {
+        widget.onSelectTab!(0);
+      }
+    } catch (e) {
+      debugPrint("Erro ao registrar lançamento: $e");
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Erro crítico ao salvar o lançamento. Tente novamente.")),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => processando = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: FundoCosmico(
-        child: carregando
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF00B4D8)))
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildSecaoLancamento("INJETAR RECEITA EXTRA", "Lançar Ganho", receitaController, Colors.greenAccent, lancarReceita),
-                    const SizedBox(height: 20),
-                    _buildSecaoLancamento("REGISTAR DESPESA À VISTA", "Lançar Débito", despesaController, Colors.redAccent, lancarDespesa),
-                    const SizedBox(height: 32),
-
-                    // Card Virada de Mês
-                    Container(
-                      padding: const EdgeInsets.all(20),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                physics: const BouncingScrollPhysics(),
+                children: [
+                  const SizedBox(height: 32),
+                  
+                  // Ícone superior imersivo
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF140B1B),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.purpleAccent.withValues(alpha: 0.2)),
+                        color: theme.primaryColor.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
                       ),
-                      child: Column(
-                        children: [
-                          const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.autorenew_rounded, color: Colors.purpleAccent),
-                              SizedBox(width: 8),
-                              Text("VIRADA DE MÊS CRONOLÓGICA", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1)),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            "Caso queiras forçar a transição de ciclo financeiro para o próximo mês agora mesmo, aciona o propulsor abaixo.",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.white54, fontSize: 12),
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: executarVirada,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.purpleAccent,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                            child: const Text("PROMOVER VIRADA DE CICLO", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                          )
-                        ],
+                      child: Icon(
+                        Icons.swap_horizontal_circle_outlined,
+                        size: 48,
+                        color: theme.primaryColor,
                       ),
-                    )
-                  ],
-                ),
-              ),
-      ),
-    );
-  }
-
-  Widget _buildSecaoLancamento(String titulo, String botao, TextEditingController controller, Color corIcone, VoidCallback onPressed) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0A1128),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: corIcone.withValues(alpha: 0.15)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(titulo, style: TextStyle(color: corIcone, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1)),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 46,
-                  child: TextField(
-                    controller: controller,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: const TextStyle(color: Colors.white, fontSize: 15, fontFamily: 'monospace'),
-                    decoration: InputDecoration(
-                      prefixText: 'R\$ ',
-                      prefixStyle: TextStyle(color: corIcone, fontWeight: FontWeight.bold),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              SizedBox(
-                height: 46,
-                child: ElevatedButton(
-                  onPressed: onPressed,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: corIcone.withValues(alpha: 0.8),
-                    foregroundColor: const Color(0xFF060B16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                  const SizedBox(height: 16),
+                  Text(
+                    "LANÇAMENTO RÁPIDO",
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.primaryColor,
+                      letterSpacing: 3,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  child: Text(botao, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Registrar Movimentação",
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Card centralizado para digitação do valor monetário
+                  Card(
+                    margin: EdgeInsets.zero,
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "DIGITE O VALOR",
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.white38,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: controller,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'monospace',
+                            ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                            ],
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty) {
+                                return "Por favor, informe o valor";
+                              }
+                              final numVal = double.tryParse(val.replaceAll(',', '.'));
+                              if (numVal == null || numVal <= 0) {
+                                return "Informe uma quantia maior que zero";
+                              }
+                              return null;
+                            },
+                            decoration: InputDecoration(
+                              prefixText: "R\$ ",
+                              prefixStyle: TextStyle(
+                                color: theme.primaryColor,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(vertical: 18),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  // Botões de Ação de Lado a Lado ou Indicador de Carregamento
+                  if (processando)
+                    const Center(
+                      child: CircularProgressIndicator(),
+                    )
+                  else
+                    Row(
+                      children: [
+                        // Botão Despesa (Saída de Dinheiro)
+                        Expanded(
+                          child: SizedBox(
+                            height: 52,
+                            child: ElevatedButton(
+                              onPressed: () => _processar(false),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AstraTheme.dangerColor,
+                                foregroundColor: Colors.black,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.arrow_downward_rounded, size: 18),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    "DESPESA",
+                                    style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        
+                        const SizedBox(width: 16),
+                        
+                        // Botão Receita (Entrada de Dinheiro)
+                        Expanded(
+                          child: SizedBox(
+                            height: 52,
+                            child: ElevatedButton(
+                              onPressed: () => _processar(true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AstraTheme.successColor,
+                                foregroundColor: Colors.black,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.arrow_upward_rounded, size: 18),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    "RECEITA",
+                                    style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  const SizedBox(height: 40),
+                ],
               ),
-            ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }

@@ -113,4 +113,39 @@ class Parcela {
     if (value is double) return value.toInt();
     return int.tryParse(value.toString()) ?? padrao;
   }
+
+  // --- ADICIONADO: MELHORIAS TÉCNICAS DE QUALIDADE DE CÓDIGO ---
+
+  /// 🔍 Sobrescrita do toString() para facilitar a depuração no console
+  @override
+  String toString() {
+    return 'Parcela(id: $id, descricao: $descricao, valorParcela: $valorParcela, progresso: $parcelaAtual/$totalParcelas, ativa: $ativa)';
+  }
+
+  /// ⚖️ Sobrescrita da igualdade de valor para comparação correta entre instâncias e listas
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+  
+    return other is Parcela &&
+        other.id == id &&
+        other.descricao == descricao &&
+        other.valorTotal == valorTotal &&
+        other.valorParcela == valorParcela &&
+        other.totalParcelas == totalParcelas &&
+        other.parcelaAtual == parcelaAtual &&
+        other.ativa == ativa;
+  }
+
+  /// 🔢 Código hash correspondente à igualdade de valor da parcela
+  @override
+  int get hashCode {
+    return id.hashCode ^
+        descricao.hashCode ^
+        valorTotal.hashCode ^
+        valorParcela.hashCode ^
+        totalParcelas.hashCode ^
+        parcelaAtual.hashCode ^
+        ativa.hashCode;
+  }
 }

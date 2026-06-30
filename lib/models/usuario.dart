@@ -60,6 +60,7 @@ class Usuario {
       empresa: (map['empresa'] ?? '') as String,
       cargo: (map['cargo'] ?? '') as String,
       ganhoFixo: _parseDouble(map['ganhoFixo']),
+      // Caso saldoAtual venha nulo, ele inicializa automaticamente com o salário base
       saldoAtual: _parseDouble(map['saldoAtual'] ?? map['ganhoFixo']), 
       ultimoMesVerificado: _parseInt(map['ultimoMesVerificado'], padrao: DateTime.now().month),
     );
@@ -80,5 +81,40 @@ class Usuario {
     if (value is int) return value;
     if (value is double) return value.toInt();
     return int.tryParse(value.toString()) ?? padrao;
+  }
+
+  // --- ADICIONADO: MELHORIAS TÉCNICAS DE QUALIDADE DE CÓDIGO ---
+
+  /// 🔍 Sobrescrita do toString() para facilitar a depuração no console
+  @override
+  String toString() {
+    return 'Usuario(nomeCompleto: $nomeCompleto, saldoAtual: $saldoAtual, ganhoFixo: $ganhoFixo, ultimoMesVerificado: $ultimoMesVerificado)';
+  }
+
+  /// ⚖️ Sobrescrita da igualdade de valor para comparação precisa entre estados de usuário
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+  
+    return other is Usuario &&
+        other.nome == nome &&
+        other.sobrenome == sobrenome &&
+        other.empresa == empresa &&
+        other.cargo == cargo &&
+        other.ganhoFixo == ganhoFixo &&
+        other.saldoAtual == saldoAtual &&
+        other.ultimoMesVerificado == ultimoMesVerificado;
+  }
+
+  /// 🔢 Código hash correspondente à igualdade do perfil de usuário
+  @override
+  int get hashCode {
+    return nome.hashCode ^
+        sobrenome.hashCode ^
+        empresa.hashCode ^
+        cargo.hashCode ^
+        ganhoFixo.hashCode ^
+        saldoAtual.hashCode ^
+        ultimoMesVerificado.hashCode;
   }
 }

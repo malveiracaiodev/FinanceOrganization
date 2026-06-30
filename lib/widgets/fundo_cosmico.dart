@@ -12,6 +12,8 @@ class FundoCosmico extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -23,13 +25,13 @@ class FundoCosmico extends StatelessWidget {
           colors: [
             const Color(0xFF040814).withValues(alpha: opacity), // Mais escuro no topo
             const Color(0xFF0B1224).withValues(alpha: opacity),
-            const Color(0xFF131C32).withValues(alpha: opacity), // Tom de transição
+            const Color(0xFF131C32).withValues(alpha: opacity), // Tom de transição inferior
           ],
         ),
       ),
       child: Stack(
         children: [
-          // 🛸 Camada 2: Nebulosa Brilhante Stitch (Gradiente Radial)
+          // 🛸 Camada 2: Nebulosa Brilhante Dinâmica (Gradiente Radial)
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -37,8 +39,10 @@ class FundoCosmico extends StatelessWidget {
                   center: const Alignment(0.7, -0.6), // Concentrado no canto superior direito
                   radius: 1.5,
                   colors: [
-                    const Color(0xFF00B4D8).withValues(alpha: opacity * 0.12), // Brilho Ciano Neon sutil
-                    Colors.transparent, // Dissolve suavemente no escuro
+                    // CORREÇÃO: Utiliza a cor primária dinâmica do seu tema central.
+                    // Se você alterar o tom neon do AstraTheme no futuro, a nebulosa se adaptará na hora!
+                    theme.primaryColor.withValues(alpha: opacity * 0.12), // Brilho neon sutil
+                    Colors.transparent, // Dissolve suavemente no escuro espacial
                   ],
                 ),
               ),

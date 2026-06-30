@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Importante para os formatadores de texto
 
 import '../models/usuario.dart';
 import '../services/preferences_service.dart';
@@ -13,6 +14,9 @@ class CadastroPage extends StatefulWidget {
 }
 
 class _CadastroPageState extends State<CadastroPage> {
+  // Chave global do formulário para controle de validação nativa
+  final _formKey = GlobalKey<FormState>();
+
   final nomeController = TextEditingController();
   final sobrenomeController = TextEditingController();
   final empresaController = TextEditingController();
@@ -33,145 +37,194 @@ class _CadastroPageState extends State<CadastroPage> {
   }
 
   Future<void> salvarCadastro() async {
-    final nomeText = nomeController.text.trim();
-    final sobrenomeText = sobrenomeController.text.trim();
-
-    if (nomeText.isEmpty || sobrenomeText.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Por favor, preencha o nome e sobrenome do usuário.")),
-      );
+    // Executa a validação visual do formulário. Se falhar, interrompe aqui.
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    final ganho = double.tryParse(
-      ganhoController.text.replaceAll(',', '.'),
-    );
-
-    if (ganho == null || ganho < 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Informe uma renda mensal base válida.")),
-      );
-      return;
-    }
-
-// Injeção de estado de carregamento
+    // Injeção de estado de carregamento
     setState(() => salvando = true);
 
-    // ✅ CORREÇÃO: Enviando os parâmetros 'nome' e 'sobrenome' exigidos pelo seu modelo
-    final usuario = Usuario(
-      nome: nomeText,
-      sobrenome: sobrenomeText, 
-      empresa: empresaController.text.trim(),
-      cargo: cargoController.text.trim(),
-      ganhoFixo: ganho,
-      saldoAtual: ganho, 
-      ultimoMesVerificado: DateTime.now().month,
-    );
+    try {
+      final nomeText = nomeController.text.trim();
+      final sobrenomeText = sobrenomeController.text.trim();
+      
+      // Conversão segura garantida pela validação e pelo formatador de texto
+      final ganho = double.parse(
+        ganhoController.text.replaceAll(',', '.'),
+      );
 
-    await PreferencesService.salvarUsuario(usuario);
+      // Instanciação do modelo de Usuário
+      final usuario = Usuario(
+        nome: nomeText,
+        sobrenome: sobrenomeText, 
+        empresa: empresaController.text.trim(),
+        cargo: cargoController.text.trim(),
+        ganhoFixo: ganho,
+        saldoAtual: ganho, 
+        ultimoMesVerificado: DateTime.now().month,
+      );
 
-    if (!mounted) return;
+      // Gravação local
+      await PreferencesService.salvarUsuario(usuario);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Perfil financeiro configurado com sucesso!")),
-    );
+      if (!mounted) return;
 
-    await Future.delayed(const Duration(milliseconds: 500));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Perfil financeiro configurado com sucesso!")),
+      );
 
-    if (!mounted) return;
+      // Breve pausa para o usuário ler o feedback de sucesso
+      await Future.delayed(const Duration(milliseconds: 500));
 
-    // Redirecionamento limpo substituindo a pilha de navegação
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const NavegacaoPage()),
-    );
+      if (!mounted) return;
+
+      // Redirecionamento com animação Fade elegante
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => const NavegacaoPage(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          transitionDuration: const Duration(milliseconds: 600),
+        ),
+      );
+    } catch (e) {
+      debugPrint("Erro ao salvar cadastro: $e");
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Erro crítico ao salvar as configurações. Tente novamente.")),
+      );
+    } finally {
+      // Garante que o estado de carregamento seja redefinido caso ocorra algum erro
+      if (mounted) {
+        setState(() => salvando = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF060B16),
+      backgroundColor: theme.scaffoldBackgroundColor, // Integrado ao fundo do seu tema
       body: FundoCosmico(
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: ListView(
-              physics: const BouncingScrollPhysics(),
-              children: [
-                const SizedBox(height: 40),
-                
-                const Center(
-                  child: Icon(
-                    Icons.analytics_rounded,
-                    size: 64,
-                    color: Color(0xFF00B4D8), // Unificado ao tom orbital do Stitch
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  "FINANÇAS MARK I",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF00B4D8),
-                    letterSpacing: 3,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  "Configuração de Conta",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // 📝 Formulário Profissionalizado
-                _campo("Nome do Usuário", nomeController, icon: Icons.person_outline_rounded),
-                _campo("Sobrenome", sobrenomeController, icon: Icons.badge_outlined),
-                _campo("Empresa / Organização", empresaController, icon: Icons.business_center_outlined),
-                _campo("Cargo / Função", cargoController, icon: Icons.work_outline_rounded),
-
-                _campo(
-                  "Renda Mensal Base (Salário)",
-                  ganhoController,
-                  teclado: const TextInputType.numberWithOptions(decimal: true),
-                  prefixo: "R\$ ",
-                  icon: Icons.account_balance_wallet_outlined,
-                  isMonetary: true,
-                ),
-
-                const SizedBox(height: 24),
-
-                // 🚀 Botão Estilizado Neon integrado
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: salvando ? null : salvarCadastro,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00B4D8),
-                      foregroundColor: const Color(0xFF060B16),
-                      disabledBackgroundColor: const Color(0xFF00B4D8).withValues(alpha: 0.3),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            child: Form(
+              key: _formKey, // Envolvemos todo o corpo em um Form
+              child: ListView(
+                physics: const BouncingScrollPhysics(),
+                children: [
+                  const SizedBox(height: 40),
+                  
+                  Center(
+                    child: Icon(
+                      Icons.analytics_rounded,
+                      size: 64,
+                      color: theme.primaryColor, // Cores do tema global
                     ),
-                    child: salvando
-                        ? const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(color: Color(0xFF060B16), strokeWidth: 3),
-                          )
-                        : const Text(
-                            "INICIALIZAR SISTEMA",
-                            style: TextStyle(letterSpacing: 1.5, fontSize: 13, fontWeight: FontWeight.bold),
-                          ),
                   ),
-                ),
-                const SizedBox(height: 40),
-              ],
+                  const SizedBox(height: 16),
+                  Text(
+                    "FINANÇAS MARK I",
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.primaryColor,
+                      letterSpacing: 3,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Configuração de Conta",
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // 📝 Formulário com Validadores Integrados
+                  _campo(
+                    "Nome do Usuário", 
+                    nomeController, 
+                    icon: Icons.person_outline_rounded,
+                    validator: (val) => val == null || val.trim().isEmpty ? "Informe o seu primeiro nome" : null,
+                  ),
+                  _campo(
+                    "Sobrenome", 
+                    sobrenomeController, 
+                    icon: Icons.badge_outlined,
+                    validator: (val) => val == null || val.trim().isEmpty ? "Informe o seu sobrenome" : null,
+                  ),
+                  _campo(
+                    "Empresa / Organização", 
+                    empresaController, 
+                    icon: Icons.business_center_outlined,
+                    // Campo opcional (sem validator)
+                  ),
+                  _campo(
+                    "Cargo / Função", 
+                    cargoController, 
+                    icon: Icons.work_outline_rounded,
+                    // Campo opcional (sem validator)
+                  ),
+                  _campo(
+                    "Renda Mensal Base (Salário)",
+                    ganhoController,
+                    teclado: const TextInputType.numberWithOptions(decimal: true),
+                    prefixo: "R\$ ",
+                    icon: Icons.account_balance_wallet_outlined,
+                    isMonetary: true,
+                    // Filtra o input para permitir apenas números, pontos e vírgulas
+                    formatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                    ],
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return "Informe sua renda mensal base";
+                      }
+                      final valor = double.tryParse(val.replaceAll(',', '.'));
+                      if (valor == null || valor < 0) {
+                        return "Insira um valor numérico válido";
+                      }
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // 🚀 Botão Principal Adaptado
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: salvando ? null : salvarCadastro,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.primaryColor,
+                        foregroundColor: Colors.black,
+                        disabledBackgroundColor: theme.primaryColor.withValues(alpha: 0.3),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: salvando
+                          ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(color: Colors.black, strokeWidth: 3),
+                            )
+                          : const Text(
+                              "INICIALIZAR SISTEMA",
+                              style: TextStyle(letterSpacing: 1.5, fontSize: 13, fontWeight: FontWeight.bold),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
           ),
         ),
@@ -179,6 +232,7 @@ class _CadastroPageState extends State<CadastroPage> {
     );
   }
 
+  // Componente de Campo de Entrada Refatorado para TextFormField
   Widget _campo(
     String label,
     TextEditingController controller, {
@@ -186,12 +240,16 @@ class _CadastroPageState extends State<CadastroPage> {
     String? prefixo,
     required IconData icon,
     bool isMonetary = false,
+    String? Function(String?)? validator,
+    List<TextInputFormatter>? formatters,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: TextField(
+      child: TextFormField(
         controller: controller,
         keyboardType: teclado,
+        validator: validator,
+        inputFormatters: formatters,
         style: TextStyle(
           color: Colors.white, 
           fontSize: 15,
@@ -200,7 +258,7 @@ class _CadastroPageState extends State<CadastroPage> {
         decoration: InputDecoration(
           labelText: label,
           prefixText: prefixo,
-          prefixStyle: isMonetary ? const TextStyle(color: Color(0xFF00B4D8), fontWeight: FontWeight.bold) : null,
+          prefixStyle: isMonetary ? TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold) : null,
           prefixIcon: Icon(icon, size: 20),
         ),
       ),

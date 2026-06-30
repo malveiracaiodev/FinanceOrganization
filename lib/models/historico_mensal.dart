@@ -11,6 +11,19 @@ class HistoricoMensal {
     required this.gastosTotais,
   });
 
+  // --- 🛰️ PONTES DE INTEGRAÇÃO COM A TELA HISTORICOPAGE (CORRIGIDO) ---
+  
+  /// 📈 Receita total gerada no ciclo correspondente
+  double get receitas => ganhoFixo + ganhosAdicionais;
+
+  /// 📉 Despesas totais ocorridas no ciclo
+  double get despesas => gastosTotais;
+
+  /// 📊 Saldo líquido restante do ciclo (Reutiliza a propriedade 'resto')
+  double get saldo => resto;
+
+  // -------------------------------------------------------------------
+
   /// 📊 Resultado líquido do mês (Saldo que sobrou)
   double get resto => ganhoFixo + ganhosAdicionais - gastosTotais;
 
@@ -24,19 +37,19 @@ class HistoricoMensal {
     return (gastosTotais / total).clamp(0.0, 1.0);
   }
 
-  /// 🚦 Status Operacional da Missão Passada
+  /// 🚦 Status Operacional da Missão Passada (Temática Espacial)
   String get statusOrbital {
-    final saldo = resto;
-    if (saldo >= receitaTotal * 0.2) {
+    final saldoFinal = resto;
+    if (saldoFinal >= receitaTotal * 0.2) {
       return "Sistemas Operando: Saúde excelente 🟢";
-    } else if (saldo >= 0) {
+    } else if (saldoFinal >= 0) {
       return "Sistemas Operando: Órbita estável 🟡";
     } else {
       return "Alerta Crítico: Rompimento de Escudo 🔴";
     }
   }
 
-  /// 🔁 Imutabilidade com copyWith
+  /// 🔁 Imutabilidade com copyWith (CORRIGIDO)
   HistoricoMensal copyWith({
     String? mesAno,
     double? ganhoFixo,
@@ -79,5 +92,34 @@ class HistoricoMensal {
     if (value is double) return value;
     if (value is int) return value.toDouble();
     return double.tryParse(value.toString()) ?? 0.0;
+  }
+
+  // --- ADICIONADO: MELHORIAS TÉCNICAS DE QUALIDADE DE CÓDIGO ---
+
+  /// 🔍 Sobrescrita do toString() para facilitar a depuração no console
+  @override
+  String toString() {
+    return 'HistoricoMensal(mesAno: $mesAno, receitas: $receitas, despesas: $despesas, saldo: $saldo)';
+  }
+
+  /// ⚖️ Sobrescrita da igualdade de valor para comparação interna de registros
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+  
+    return other is HistoricoMensal &&
+        other.mesAno == mesAno &&
+        other.ganhoFixo == ganhoFixo &&
+        other.ganhosAdicionais == ganhosAdicionais &&
+        other.gastosTotais == gastosTotais;
+  }
+
+  /// 🔢 Código hash correspondente à igualdade de valor do histórico
+  @override
+  int get hashCode {
+    return mesAno.hashCode ^
+        ganhoFixo.hashCode ^
+        ganhosAdicionais.hashCode ^
+        gastosTotais.hashCode;
   }
 }

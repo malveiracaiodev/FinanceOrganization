@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'dashboard_page.dart';
 import 'controle_page.dart';
 import 'parcelas_page.dart'; 
@@ -22,7 +23,7 @@ class _NavegacaoPageState extends State<NavegacaoPage> {
     });
   }
 
-  // 🛰️ Lista oficial organizada conforme o layout padrão do Mark I (Imagem screen.png)
+  // 🛰️ Lista oficial organizada conforme o layout padrão do Mark I
   List<Widget> get _paginas => [
     DashboardPage(onSelectTab: _mudarAbaExterna), // 0: Home
     HistoricoPage(onSelectTab: _mudarAbaExterna), // 1: History
@@ -42,42 +43,48 @@ class _NavegacaoPageState extends State<NavegacaoPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: const Color(0xFF060B16),
+      backgroundColor: theme.scaffoldBackgroundColor, // Integrado ao tema
+      
       appBar: AppBar(
-        title: Text(
-          _tituloAppBar,
-          style: const TextStyle(letterSpacing: 1.5, fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: const Color(0xFF0A1128),
+        title: Text(_tituloAppBar),
+        backgroundColor: Colors.transparent, // Transparência para fusão com o fundo cósmico
         elevation: 0,
+        scrolledUnderElevation: 0, // Evita mudança de cor ao rolar listas sob o app bar
         leading: IconButton(
-          icon: const Icon(Icons.menu_rounded, color: Color(0xFF00B4D8)),
+          icon: const Icon(Icons.menu_rounded),
+          color: theme.primaryColor, // Ciano Elétrico extraído dinamicamente do tema
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
       ),
       
-      // 🎯 CORREÇÃO CRÍTICA: Injetando o callback para o AppDrawer conseguir mudar as abas
+      // 🎯 Injeção do callback para o AppDrawer interagir com a navegação central
       drawer: AppDrawer(onSelectTab: _mudarAbaExterna),
       
       body: IndexedStack(
         index: _currentIndex,
         children: _paginas,
       ),
+      
       bottomNavigationBar: SafeArea(
         child: Container(
           height: 70,
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           decoration: BoxDecoration(
-            color: const Color(0xFF0A1128),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFF00B4D8).withValues(alpha: 0.15)),
+            color: theme.colorScheme.surface.withValues(alpha: 0.95), // Superfície translúcida do tema
+            borderRadius: BorderRadius.circular(24), // Cantos modernos de 24px que casam com os cards
+            border: Border.all(
+              color: theme.primaryColor.withValues(alpha: 0.15), // Borda de brilho sutil baseada no tema
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.4),
-                blurRadius: 10,
-                offset: const Offset(0, -4),
+                color: Colors.black.withValues(alpha: 0.5),
+                blurRadius: 15,
+                spreadRadius: 1,
+                offset: const Offset(0, -2),
               ),
             ],
           ),
@@ -86,11 +93,30 @@ class _NavegacaoPageState extends State<NavegacaoPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                // 🛸 Botões remodelados e reordenados com base na imagem screen.png do projeto
-                _buildBottomActionItem(index: 0, icone: Icons.home_filled, label: "Home"),
-                _buildBottomActionItem(index: 1, icone: Icons.history_toggle_off_rounded, label: "History"),
-                _buildBottomActionItem(index: 2, icone: Icons.add_circle_outline_rounded, label: "Add"),
-                _buildBottomActionItem(index: 3, icone: Icons.settings_outlined, label: "Settings"),
+                _buildBottomActionItem(
+                  context: context,
+                  index: 0, 
+                  icone: Icons.home_filled, 
+                  label: "Home",
+                ),
+                _buildBottomActionItem(
+                  context: context,
+                  index: 1, 
+                  icone: Icons.history_toggle_off_rounded, 
+                  label: "History",
+                ),
+                _buildBottomActionItem(
+                  context: context,
+                  index: 2, 
+                  icone: Icons.add_circle_outline_rounded, 
+                  label: "Add",
+                ),
+                _buildBottomActionItem(
+                  context: context,
+                  index: 3, 
+                  icone: Icons.settings_outlined, 
+                  label: "Settings",
+                ),
               ],
             ),
           ),
@@ -99,8 +125,17 @@ class _NavegacaoPageState extends State<NavegacaoPage> {
     );
   }
 
-  Widget _buildBottomActionItem({required int index, required IconData icone, required String label}) {
+  // Componente individual dos botões de ação na barra inferior flutuante
+  Widget _buildBottomActionItem({
+    required BuildContext context,
+    required int index, 
+    required IconData icone, 
+    required String label,
+  }) {
+    final theme = Theme.of(context);
     final bool ativo = _currentIndex == index;
+    final color = ativo ? theme.primaryColor : Colors.white38;
+
     return GestureDetector(
       onTap: () => _mudarAbaExterna(index),
       child: Container(
@@ -111,16 +146,17 @@ class _NavegacaoPageState extends State<NavegacaoPage> {
           children: [
             Icon(
               icone, 
-              color: ativo ? const Color(0xFF00B4D8) : Colors.white38,
+              color: color,
               size: 22,
             ),
             const SizedBox(height: 4),
             Text(
               label, 
               style: TextStyle(
-                color: ativo ? const Color(0xFF00B4D8) : Colors.white38, 
+                color: color, 
                 fontSize: 10,
                 fontWeight: ativo ? FontWeight.bold : FontWeight.normal,
+                fontFamily: 'Space Grotesk', // Garante a tipografia consistente com o restante do app
               ),
             ),
           ],

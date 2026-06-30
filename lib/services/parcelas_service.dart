@@ -7,7 +7,7 @@ class ParcelasService {
   static const String _key = 'parcelas';
   static List<Parcela>? _cache;
 
-  // 🪐 Otimizado: Só busca no disco se o cache local estiver vazio
+  /// 🛰️ Carrega a lista de parcelas utilizando cache para otimização de I/O
   static Future<List<Parcela>> carregar() async {
     if (_cache != null) return _cache!;
 
@@ -22,7 +22,7 @@ class ParcelasService {
           final Map<String, dynamic> map = jsonDecode(item) as Map<String, dynamic>;
           listaValida.add(Parcela.fromJson(map));
         } catch (innerError) {
-          // Se uma única parcela der erro (R8/ProGuard), ignora ela e não quebra a lista toda
+          // Proteção contra falhas de desserialização individuais
           debugPrint("Erro ao desserializar uma parcela individual: $innerError");
         }
       }
@@ -35,48 +35,45 @@ class ParcelasService {
     }
   }
 
+  /// 💾 Salva o estado atual das parcelas e sincroniza o cache imediatamente
   static Future<void> salvar(List<Parcela> lista) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final List<String> dadosMapeados = lista.map((e) => jsonEncode(e.toJson())).toList();
       
       await prefs.setStringList(_key, dadosMapeados);
-      _cache = List.from(lista); // Sincroniza o cache imediatamente de forma segura
+      _cache = List.from(lista); // Clone de segurança para sincronizar o cache em memória
     } catch (e) {
       debugPrint("Erro ao salvar parcelas no SharedPreferences: $e");
     }
   }
 
+  /// 📥 Adiciona uma nova parcela diretamente à lista e salva
   static Future<void> adicionarParcela(Parcela p) async {
     final lista = await carregar();
     lista.add(p);
     await salvar(lista);
   }
 
-  static Future<List<Parcela>> carregarParcelas() async {
-    return await carregar();
-  }
-
+  /// ❌ Deleta um parcelamento específico usando o ID único
   static Future<void> deletarParcelas(String id) async {
     final lista = await carregar();
     lista.removeWhere((p) => p.id == id);
     await salvar(lista);
   }
 
-  static Future<void> salvarParcelas(Parcela nova) async {
-    await adicionarParcela(nova);
-  }
-
+  /// 📝 Cria e cadastra uma compra parcelada de forma padronizada
   static Future<void> cadastrarCompraParcelada({
     required String descricao,
     required double valorTotal,
     required int totalParcelas,
     double? valorDaParcela,
   }) async {
+    // Caso não seja passado o valor individual, faz a divisão simples das parcelas
     final calculoParcela = valorDaParcela ?? (valorTotal / totalParcelas);
 
     final novaParcela = Parcela(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: DateTime.now().millisecondsSinceEpoch.toString(), // ID único baseado em timestamp
       descricao: descricao,
       valorTotal: valorTotal,
       valorParcela: calculoParcela,
@@ -88,6 +85,7 @@ class ParcelasService {
     await adicionarParcela(novaParcela);
   }
 
+  /// ✏️ Edita os parâmetros de um contrato de parcelamento existente
   static Future<void> editarCompraParcelada(
     String id, {
     required String novaDescricao,
@@ -106,13 +104,14 @@ class ParcelasService {
         totalParcelas: novoTotalParcelas,
         parcelaAtual: parcelaAtual,
         valorTotal: novoValorParcela * novoTotalParcelas,
+        // Desativa o parcelamento automaticamente caso o limite de parcelas seja atingido
         ativa: parcelaAtual <= novoTotalParcelas,
       );
       await salvar(lista);
     }
   }
 
-  // 📊 Vinculado à propriedade correta 'valorParcela' do seu modelo
+  /// 📊 Calcula o somatório total das faturas de parcelamentos ativos do mês corrente
   static Future<double> calcularTotalMes() async {
     final lista = await carregar();
     double total = 0;
@@ -124,6 +123,7 @@ class ParcelasService {
     return total;
   }
 
+  /// 🔄 Avança o contador de parcelamento de todos os contratos ativos (Fechamento Mensal)
   static Future<void> processarMes() async {
     final lista = await carregar();
     final List<Parcela> atualizada = [];
@@ -135,11 +135,12 @@ class ParcelasService {
     await salvar(atualizada);
   }
 
-  /// 🔄 Alias tático de sincronização para a virada automática do ControleService
+  /// 🔄 Alias tático para integração e fechamento no ControleService
   static Future<void> virarMes() async {
     await processarMes();
   }
 
+  /// ⏭️ Avança manualmente o andamento de um parcelamento específico
   static Future<void> adiantarContrato(String id) async {
     final lista = await carregar();
     final index = lista.indexWhere((p) => p.id == id);
@@ -149,6 +150,7 @@ class ParcelasService {
     }
   }
 
+  /// ⏮️ Retrocede manualmente o andamento de um parcelamento específico
   static Future<void> atrasarContrato(String id) async {
     final lista = await carregar();
     final index = lista.indexWhere((p) => p.id == id);
@@ -158,6 +160,7 @@ class ParcelasService {
     }
   }
 
+  /// 🧹 Limpa o cache de memória do sistema (Ex: Caso ocorra logout ou reset de perfil)
   static void limparCache() {
     _cache = null;
   }
